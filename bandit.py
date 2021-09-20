@@ -4,7 +4,7 @@ import networkx as nx
 from collections import deque
 
 class Bandit:
-  def __init__(self, means, A, K, n, f, prob_ER = 0.05):
+  def __init__(self, means, A, K, n, f, prob_ER = 0.1):
     assert len(means) == K
     self.means = means
     self.subopt = self.means - np.min(self.means)
@@ -88,11 +88,52 @@ class Bandit:
           # self.net_agents.nodes[v]['losses_s'] |= self.net_agents.nodes[u]['losses_s']
     return 0
 
-  def summary(self):
-    print("-----------------------")
-    print("number of arms: ", self.arms())
-    print("number of rounds: ", self.t)
-    print("-----------------------")
+###### This should be modified (I started) because like this the protocol is not good to be
+###### able to reconstruct probabilities in estimators, it is good just for identifying the
+###### indicator function in the estimator. For the moment I change the implementation of the
+###### estimator giving access to info that the player doesnt have with current impliementation
+###### of protocol and messages
+  # def play(self, arms):
+  #   assert len(self.net_agents.nodes) == len(arms)
+  #   # Compute rewards for this round
+  #   rewards = np.random.binomial(1, self.means)
+  #   self.t += 1
+  #   # delete previous losses and prepare for new onens
+  #   for v in self.net_agents.nodes:
+  #     self.net_agents.nodes[v]['new_losses'] = []
+  #   # UPDATE:
+  #   # First, you update when you are active and play
+  #   for v in in self.net_agents.nodes:
+  #     # self.net_agents.nodes[v]['buffer_losses'].append([])
+  #     message = self.net_agents.nodes[v]['message'] # these messages are the probabilities actually
+  #     if self.activations[v]==1:
+  #       i = arms[v]
+  #       reward = rewards[i]
+  #       self.net_agents.nodes[v]['T'][i] += 1
+  #       self.net_agents.nodes[v]['S'][i] += reward
+  #     neigh_feed = [j for j in nx.single_source_shortest_path_length(self.net_feed, i, self.f).keys()]
+  #     for j in neigh_feed:
+  #       # self.net_agents.nodes[v]['all_losses'].append((self.t, v, j, rewards[j], message[j]))
+  #       self.net_agents.nodes[v]['new_losses'].append((self.t, v, j, rewards[j], message[j]))
+  #       # self.net_agents.nodes[v]['buffer_losses'][-1].append((self.t, v, j, rewards[j], message[j]))
+  #       # self.net_agents.nodes[v]['losses_s'].add((self.t, v, j, rewards[j], message[j]))
+  #   # Then, you update for all the messages coming from active agents
+  #   for v in self.net_agents.nodes:
+  #     neigh_agents = [u for u in nx.single_source_shortest_path_length(self.net_agents, v, self.n).keys()]
+  #     print("neighbour of", v, "has elements", neigh_agents)
+  #     for u in neigh_agents:
+  #       if u != v:
+  #         # self.net_agents.nodes[v]['all_losses'] += self.net_agents.nodes[u]['all_losses']
+  #         self.net_agents.nodes[v]['new_losses'] += self.net_agents.nodes[u]['new_losses']
+  #         # self.net_agents.nodes[v]['buffer_losses'][-1] += self.net_agents.nodes[u]['buffer_losses']
+  #         # self.net_agents.nodes[v]['losses_s'] |= self.net_agents.nodes[u]['losses_s']
+  #   return 0
+
+  # def summary(self):
+  #   print("-----------------------")
+  #   print("number of arms: ", self.arms())
+  #   print("number of rounds: ", self.t)
+  #   print("-----------------------")
 
 
 class COOP_algo():
@@ -128,14 +169,40 @@ class COOP_algo():
     else:
       return self.buffer[0]
 
+  # def ev_lhat(self, i, v):
+  #   new_losses = self.bandit.net_agents.nodes[v]["new_losses"]
+  #   print("new_losses:", new_losses)
+  #   if len(new_losses) != 0:
+  #     loss_comps = {(j, reward) for s, u, j, reward, prob in new_losses} # maybe add prob????
+  #     seen_comps = {j for s, u, j, reward, prob in new_losses}
+  #     neigh_agents = {u for s, u, j, reward, prob in new_losses}
+  #     na_check = [u for u in nx.single_source_shortest_path_length(self.bandit.net_agents, v, self.bandit.n).keys()]
+  #     # print("i ----->",i, loss_comps, neigh_agents,na_check)
+  #     if i not in seen_comps:
+  #       return 0.
+  #     else:
+  #       [l_i] = [l[1] for l in loss_comps if l[0]==i]
+  #       prod = 1
+  #       for u in neigh_agents:
+  #         P = np.sum([prob for s, w, j, reward, prob in new_losses if w == u])
+  #         # print("P=",[prob for s, w, j, reward, prob in new_losses if w == u])
+  #         I_P = 1 - self.bandit.net_agents.nodes[u]['q'] * P
+  #         prod *= I_P
+  #       b = 1 - prod
+  #       # print("b=",b)
+  #       return l_i / b
+  #   else:
+  #     return 0.
+
   def ev_lhat(self, i, v):
     new_losses = self.bandit.net_agents.nodes[v]["new_losses"]
     print("new_losses:", new_losses)
     if len(new_losses) != 0:
-      loss_comps = {(j, reward) for s, u, j, reward, prob in new_losses} #maybe add prob????
+      loss_comps = {(j, reward) for s, u, j, reward, prob in new_losses} # maybe add prob????
       seen_comps = {j for s, u, j, reward, prob in new_losses}
-      neigh_agents = {u for s, u, j, reward, prob in new_losses}
-      na_check = [u for u in nx.single_source_shortest_path_length(self.bandit.net_agents, v, self.bandit.n).keys()]
+      # neigh_agents = {u for s, u, j, reward, prob in new_losses}
+      neigh_agents = [u for u in nx.single_source_shortest_path_length(self.bandit.net_agents, v, self.bandit.n).keys()]
+      neigh_feed = [j for j in nx.single_source_shortest_path_length(self.bandit.net_feed, i, self.bandit.f).keys()]
       # print("i ----->",i, loss_comps, neigh_agents,na_check)
       if i not in seen_comps:
         return 0.
@@ -143,7 +210,7 @@ class COOP_algo():
         [l_i] = [l[1] for l in loss_comps if l[0]==i]
         prod = 1
         for u in neigh_agents:
-          P = np.sum([prob for s, w, j, reward, prob in new_losses if w == u])
+          P = np.sum([self.P[j,u] for j in neigh_feed])
           # print("P=",[prob for s, w, j, reward, prob in new_losses if w == u])
           I_P = 1 - self.bandit.net_agents.nodes[u]['q'] * P
           prod *= I_P

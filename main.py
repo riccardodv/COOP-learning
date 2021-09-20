@@ -6,9 +6,9 @@ from collections import deque
 
 n = 1
 f = 1
-num_agents = 5
-num_arms = 10
-T = 10000
+num_agents = 20
+num_arms = 20
+T = 1000
 arms_means = 1/2*np.ones(num_arms)
 arms_means
 arms_means[0] = 0.1 #1/2 - np.sqrt(num_arms/T)
