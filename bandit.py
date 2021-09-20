@@ -88,6 +88,15 @@ class Bandit:
           # self.net_agents.nodes[v]['losses_s'] |= self.net_agents.nodes[u]['losses_s']
     return 0
 
+  def restart_bandit(self):
+    for v in self.net_agents.nodes:
+        self.net_agents.nodes[v]['new_losses'] = []
+        self.net_agents.nodes[v]['message'] = np.zeros(self.arms())
+        self.net_agents.nodes[v]['w'] = np.zeros(self.arms())
+        self.net_agents.nodes[v]['T'] = np.zeros(self.arms())
+        self.net_agents.nodes[v]['S'] = np.zeros(self.arms())
+        self.activations = []
+
 ###### This should be modified (I started) because like this the protocol is not good to be
 ###### able to reconstruct probabilities in estimators, it is good just for identifying the
 ###### indicator function in the estimator. For the moment I change the implementation of the
@@ -149,7 +158,7 @@ class COOP_algo():
     self.alpha_feed = len(nx.maximal_independent_set(nx.power(self.bandit.net_feed, self.bandit.f)))
     self.alpha_agents = len(nx.maximal_independent_set(nx.power(self.bandit.net_agents, self.bandit.n)))
     self.Q = np.sum([self.bandit.net_agents.nodes[v]['q'] for v in self.bandit.net_agents.nodes])
-    self.eta = np.sqrt(self.T*np.log(self.bandit.K)/(self.T*self.alpha_feed*(self.alpha_agents/self.Q+1)+self.bandit.f+self.bandit.n))
+    self.eta = np.sqrt(np.log(self.bandit.K)/(self.T*self.alpha_feed*(self.alpha_agents/self.Q+1)+self.bandit.f+self.bandit.n))
 
   def update(self, eta):
     for v in range(len(self.bandit.net_agents.nodes)):
@@ -159,10 +168,11 @@ class COOP_algo():
       self.P[:,v] = self.W[:,v]/np.linalg.norm(self.W[:,v], ord=1)
 
   def update_buffer_and_predict(self):
-    eta = 1/np.sqrt(self.bandit.t+1)
-    self.update(eta)
-    print("eta = ", eta)
-    # self.update()
+    self.eta = 1/np.sqrt(self.bandit.t+1)
+    self.update(self.eta)
+    print("eta = ", self.eta)
+    # self.update(self.eta)
+    # print("eta = ", self.eta)
     self.buffer.append(self.P)
     if self.bandit.t > self.bandit.f + self.bandit.n:
       return self.buffer.popleft()
@@ -194,16 +204,18 @@ class COOP_algo():
   #   else:
   #     return 0.
 
-  def ev_lhat(self, i, v):
+  def ev_lhat(self, i, v, epsilon = 10**-20):
     new_losses = self.bandit.net_agents.nodes[v]["new_losses"]
-    print("new_losses:", new_losses)
+    # print("new_losses:", new_losses)
     if len(new_losses) != 0:
       loss_comps = {(j, reward) for s, u, j, reward, prob in new_losses} # maybe add prob????
       seen_comps = {j for s, u, j, reward, prob in new_losses}
       # neigh_agents = {u for s, u, j, reward, prob in new_losses}
       neigh_agents = [u for u in nx.single_source_shortest_path_length(self.bandit.net_agents, v, self.bandit.n).keys()]
       neigh_feed = [j for j in nx.single_source_shortest_path_length(self.bandit.net_feed, i, self.bandit.f).keys()]
+      # print("neigh_agents:", neigh_agents, "|| neigh_feed:", neigh_feed)
       # print("i ----->",i, loss_comps, neigh_agents,na_check)
+      # print("seen_comps: ", seen_comps, "i =", i)
       if i not in seen_comps:
         return 0.
       else:
@@ -214,8 +226,8 @@ class COOP_algo():
           # print("P=",[prob for s, w, j, reward, prob in new_losses if w == u])
           I_P = 1 - self.bandit.net_agents.nodes[u]['q'] * P
           prod *= I_P
-        b = 1 - prod
-        # print("b=",b)
+        b = 1 - prod + epsilon
+        # print("b=",b, "|| l_i / b = ",l_i / b, "|| eta * l_i / b = ",l_i / b*self.eta)
         return l_i / b
     else:
       return 0.
@@ -242,16 +254,16 @@ class COOP_algo():
     # print("self.P = ", self.P)
     self.bandit.play(self.sample())
 
-    # def play_game(self):
-    #   for t in range(self.T)
-    #     act()
+  def restart_algo(self, bandit, T):
+    self.bandit = bandit
+    f_var = self.bandit.arms()
+    s_var = self.bandit.net_agents.number_of_nodes()
+    self.W = np.ones((f_var, s_var))
+    self.P = np.ones((f_var, s_var))/f_var
+    self.T = T
+    self.buffer = deque()
 
-  # def idx(self):
-  #   return self.bandit.S / self.bandit.T + np.sqrt(0.5 / self.bandit.T * np.log(self.bandit.rounds() + 1.0))
-  #
-  # def act(self):
-  #   if self.bandit.rounds() < self.bandit.arms():
-  #     self.bandit.play(self.bandit.rounds())
-  #     return
-  #   ucb = self.idx()
-  #   self.bandit.play(np.argmax(ucb))
+    self.alpha_feed = len(nx.maximal_independent_set(nx.power(self.bandit.net_feed, self.bandit.f)))
+    self.alpha_agents = len(nx.maximal_independent_set(nx.power(self.bandit.net_agents, self.bandit.n)))
+    self.Q = np.sum([self.bandit.net_agents.nodes[v]['q'] for v in self.bandit.net_agents.nodes])
+    self.eta = np.sqrt(np.log(self.bandit.K)/(self.T*self.alpha_feed*(self.alpha_agents/self.Q+1)+self.bandit.f+self.bandit.n))
