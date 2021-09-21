@@ -9,13 +9,12 @@ class Bandit:
     assert len(means) == K
     self.means = means
     self.subopt = self.means - np.min(self.means)
-    self.net_feed = nx.erdos_renyi_graph(K, prob_ER)
-    self.net_agents = nx.erdos_renyi_graph(A, prob_ER)
+    self.net_feed = nx.erdos_renyi_graph(K, 0.3)
+    self.net_agents = nx.erdos_renyi_graph(A, 0.2)
     self.t = 0
     for v in self.net_agents.nodes:
         self.net_agents.nodes[v]['new_losses'] = []
         self.net_agents.nodes[v]['message'] = np.zeros(self.arms())
-        self.net_agents.nodes[v]['w'] = np.zeros(self.arms())
         self.net_agents.nodes[v]['T'] = np.zeros(self.arms())
         self.net_agents.nodes[v]['S'] = np.zeros(self.arms())
         self.net_agents.nodes[v]['q'] = 1
@@ -68,62 +67,20 @@ class Bandit:
     # Update for all the messages coming from active agents:
     for v in self.net_agents.nodes:
       neigh_agents = [u for u in nx.single_source_shortest_path_length(self.net_agents, v, self.n).keys()]
-      print("neighbour of", v, "has elements", neigh_agents)
+      # print("neighbour of", v, "has elements", neigh_agents)
       for u in neigh_agents:
         if u != v:
           self.net_agents.nodes[v]['new_losses'] += self.net_agents.nodes[u]['new_losses']
     return 0
 
   def restart_bandit(self):
+    self.t = 0
     for v in self.net_agents.nodes:
         self.net_agents.nodes[v]['new_losses'] = []
         self.net_agents.nodes[v]['message'] = np.zeros(self.arms())
-        self.net_agents.nodes[v]['w'] = np.zeros(self.arms())
         self.net_agents.nodes[v]['T'] = np.zeros(self.arms())
         self.net_agents.nodes[v]['S'] = np.zeros(self.arms())
         self.activations = []
-
-###### This should be modified (I started) because like this the protocol is not good to be
-###### able to reconstruct probabilities in estimators, it is good just for identifying the
-###### indicator function in the estimator. For the moment I change the implementation of the
-###### estimator giving access to info that the player doesnt have with current impliementation
-###### of protocol and messages
-  # def play(self, arms):
-  #   assert len(self.net_agents.nodes) == len(arms)
-  #   # Compute rewards for this round
-  #   rewards = np.random.binomial(1, self.means)
-  #   self.t += 1
-  #   # delete previous losses and prepare for new onens
-  #   for v in self.net_agents.nodes:
-  #     self.net_agents.nodes[v]['new_losses'] = []
-  #   # UPDATE:
-  #   # First, you update when you are active and play
-  #   for v in in self.net_agents.nodes:
-  #     # self.net_agents.nodes[v]['buffer_losses'].append([])
-  #     message = self.net_agents.nodes[v]['message'] # these messages are the probabilities actually
-  #     if self.activations[v]==1:
-  #       i = arms[v]
-  #       reward = rewards[i]
-  #       self.net_agents.nodes[v]['T'][i] += 1
-  #       self.net_agents.nodes[v]['S'][i] += reward
-  #     neigh_feed = [j for j in nx.single_source_shortest_path_length(self.net_feed, i, self.f).keys()]
-  #     for j in neigh_feed:
-  #       # self.net_agents.nodes[v]['all_losses'].append((self.t, v, j, rewards[j], message[j]))
-  #       self.net_agents.nodes[v]['new_losses'].append((self.t, v, j, rewards[j], message[j]))
-  #       # self.net_agents.nodes[v]['buffer_losses'][-1].append((self.t, v, j, rewards[j], message[j]))
-  #       # self.net_agents.nodes[v]['losses_s'].add((self.t, v, j, rewards[j], message[j]))
-  #   # Then, you update for all the messages coming from active agents
-  #   for v in self.net_agents.nodes:
-  #     neigh_agents = [u for u in nx.single_source_shortest_path_length(self.net_agents, v, self.n).keys()]
-  #     print("neighbour of", v, "has elements", neigh_agents)
-  #     for u in neigh_agents:
-  #       if u != v:
-  #         # self.net_agents.nodes[v]['all_losses'] += self.net_agents.nodes[u]['all_losses']
-  #         self.net_agents.nodes[v]['new_losses'] += self.net_agents.nodes[u]['new_losses']
-  #         # self.net_agents.nodes[v]['buffer_losses'][-1] += self.net_agents.nodes[u]['buffer_losses']
-  #         # self.net_agents.nodes[v]['losses_s'] |= self.net_agents.nodes[u]['losses_s']
-  #   return 0
-
 
 class COOP_algo():
   def __init__(self, bandit, T=100):
@@ -146,7 +103,7 @@ class COOP_algo():
         self.W[i,v] = self.W[i,v] * np.exp(-eta*self.ev_lhat(i,v))
     for v in range(len(self.bandit.net_agents.nodes)):
       self.P[:,v] = self.W[:,v]/np.linalg.norm(self.W[:,v], ord=1)
-      print("P = ", self.P[:,v])
+      # print("P = ", self.P[:,v])
 
   def update_buffer_and_predict(self):
     # Adaptive learning rate:
@@ -157,7 +114,7 @@ class COOP_algo():
     # self.update(self.eta)
     # print("eta = ", self.eta)
     self.buffer.append(copy.copy(self.P))
-    print("self.buffer: ", self.buffer)
+    # print("self.buffer: ", self.buffer)
     if self.bandit.t >= self.bandit.f + self.bandit.n:
       return self.buffer.popleft()
     else:
@@ -190,8 +147,8 @@ class COOP_algo():
     arms = [a for a in range(len(self.bandit.net_agents.nodes))]
     for v, act in enumerate(self.bandit.activations):
       prob = probs[:,v]
-      print("NEW LOSSES AVAILABLE: ", self.bandit.net_agents.nodes[v]["new_losses"])
-      print("PREDICTION PROB: ", prob)
+      # print("NEW LOSSES AVAILABLE: ", self.bandit.net_agents.nodes[v]["new_losses"])
+      # print("PREDICTION PROB: ", prob)
       self.bandit.net_agents.nodes[v]['message'] = prob
 
       if act == 1:
