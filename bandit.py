@@ -9,15 +9,15 @@ class Bandit:
     assert len(means) == K
     self.means = means
     self.subopt = self.means - np.min(self.means)
-    self.net_feed = nx.erdos_renyi_graph(K, 0.1, seed = 5)
-    self.net_agents = nx.erdos_renyi_graph(A, 0.1, seed = 5)
+    self.net_feed = nx.erdos_renyi_graph(K, 0.2, seed = 5)
+    self.net_agents = nx.erdos_renyi_graph(A, 0.4, seed = 5)
     self.t = 0
     for v in self.net_agents.nodes:
         self.net_agents.nodes[v]['new_losses'] = []
         self.net_agents.nodes[v]['message'] = np.zeros(self.arms())
         self.net_agents.nodes[v]['T'] = np.zeros(self.arms())
         self.net_agents.nodes[v]['S'] = np.zeros(self.arms())
-        self.net_agents.nodes[v]['q'] = 1
+        self.net_agents.nodes[v]['q'] = 1.
         self.activations = []
         self.f = f
         self.n = n
@@ -95,7 +95,7 @@ class COOP_algo():
     self.alpha_feed = len(nx.maximal_independent_set(nx.power(self.bandit.net_feed, self.bandit.f)))
     self.alpha_agents = len(nx.maximal_independent_set(nx.power(self.bandit.net_agents, self.bandit.n)))
     self.Q = np.sum([self.bandit.net_agents.nodes[v]['q'] for v in self.bandit.net_agents.nodes])
-    self.eta = np.sqrt(np.log(self.bandit.K)/(self.T*self.alpha_feed*(self.alpha_agents/self.Q+1)+self.bandit.f+self.bandit.n))
+    self.eta = np.sqrt(np.log(self.bandit.K)/self.T/(self.alpha_feed/(1-np.exp(-1))*(self.alpha_agents/self.Q+1)+self.bandit.f+self.bandit.n))
 
   def update(self, eta):
     for v in range(len(self.bandit.net_agents.nodes)):
