@@ -9,8 +9,8 @@ class Bandit:
     assert len(means) == K
     self.means = means
     self.subopt = self.means - np.min(self.means)
-    self.net_feed = nx.erdos_renyi_graph(K, 0.3)
-    self.net_agents = nx.erdos_renyi_graph(A, 0.2)
+    self.net_feed = nx.erdos_renyi_graph(K, 0.1, seed = 5)
+    self.net_agents = nx.erdos_renyi_graph(A, 0.1, seed = 5)
     self.t = 0
     for v in self.net_agents.nodes:
         self.net_agents.nodes[v]['new_losses'] = []
@@ -109,7 +109,6 @@ class COOP_algo():
     # Adaptive learning rate:
     self.eta = 1/np.sqrt(self.bandit.t+1)
     self.update(self.eta)
-    print("eta = ", self.eta)
     # Fixed learning rate:
     # self.update(self.eta)
     # print("eta = ", self.eta)
