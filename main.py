@@ -2,6 +2,8 @@ import numpy as np
 import bandit
 from collections import deque
 import networkx as nx
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as pp
 import multiprocessing as mp
 
@@ -112,4 +114,3 @@ if __name__ == "__main__":
     pp.title(tit)
     pp.legend()
     pp.savefig('tit.pdf', dpi=200)
-    pp.show()
