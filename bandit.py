@@ -5,7 +5,7 @@ from collections import deque
 import copy
 
 class Bandit:
-  def __init__(self, means, A, K, n, f, prob_ER_a = 0.3, prob_ER_f = 0.2):
+  def __init__(self, means, A, K, n, f, prob_ER_a = 0.3, prob_ER_f = 0.2, q = 1):
     assert len(means) == K
     self.means = means
     self.subopt = self.means - np.min(self.means)
@@ -17,7 +17,7 @@ class Bandit:
         self.net_agents.nodes[v]['message'] = np.zeros(self.arms())
         self.net_agents.nodes[v]['T'] = np.zeros(self.arms())
         self.net_agents.nodes[v]['S'] = np.zeros(self.arms())
-        self.net_agents.nodes[v]['q'] = 1
+        self.net_agents.nodes[v]['q'] = q
         self.activations = []
         self.f = f
         self.n = n

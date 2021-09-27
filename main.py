@@ -64,17 +64,18 @@ def UB(x_list, d, K, alpha_feed, alpha_agents):
 
 n = 2
 f = 2
+q = 1
 num_agents = 10
 num_arms = 10
-T = 500
+T = 10
 prob_ER_a = 0.3; prob_ER_f = 0.2
 arms_means = 1/2 * np.ones(num_arms)
 arms_means[0] = 0.1 #1/2 - np.sqrt(num_arms/T)
-sample = 10
+sample = 1000
 
 def run_indep_coop(arms_means, num_agents, num_arms, n, f, prob_ER_a, prob_ER_f, T):
 # rr , rr_indepp = [], []
-    ban = bandit.Bandit(arms_means, num_agents, num_arms, n, f, prob_ER_a, prob_ER_f)
+    ban = bandit.Bandit(arms_means, num_agents, num_arms, n, f, prob_ER_a, prob_ER_f, q)
     coop = bandit.COOP_algo(ban, T)
     ban, coop, r = run_algo(ban, coop, T)
     ban.restart_bandit()
@@ -85,9 +86,11 @@ def run_indep_coop(arms_means, num_agents, num_arms, n, f, prob_ER_a, prob_ER_f,
 
 if __name__ == "__main__":
     print("cpus number =", mp.cpu_count())
-    pool = mp.Pool(mp.cpu_count())
-    results = [pool.apply(run_indep_coop, args=(arms_means, num_agents, num_arms, n, f, prob_ER_a, prob_ER_f, T)) for s in range(sample)]
+    pool = mp.Pool() #(mp.cpu_count())
+    it = [(arms_means, num_agents, num_arms, n, f, prob_ER_a, prob_ER_f, T) for s in range(sample)]
+    results = pool.starmap(run_indep_coop, it)
     pool.close()
+    pool.join()
     results = np.array(results)
     r = results[:,0]
     r_indepp = results[:,1]
@@ -105,7 +108,8 @@ if __name__ == "__main__":
     pp.fill_between(x, means_indepp - errors_indepp,means_indepp + errors_indepp, color='red', alpha=0.2)
     # pp.plot(x, bound, label = "theory", color='black')
     tit = f"n={n}, f={f}, n agents={num_agents}, n arms={num_arms}, bias0={arms_means[0]:.3}"
-    # tit += f"q={ban.net_agents.nodes[0]['q']}, samples={sample}, ER_a={prob_ER_a}, ER_f={prob_ER_f}"
+    tit += f", q={q}, samples={sample}, ER_a={prob_ER_a}, ER_f={prob_ER_f}"
     pp.title(tit)
     pp.legend()
+    pp.savefig('tit.eps')
     pp.show()
