@@ -5,19 +5,19 @@ from collections import deque
 import copy
 
 class Bandit:
-  def __init__(self, means, A, K, n, f, prob_ER = 0.1):
+  def __init__(self, means, A, K, n, f, prob_ER_a = 0.3, prob_ER_f = 0.2):
     assert len(means) == K
     self.means = means
     self.subopt = self.means - np.min(self.means)
-    self.net_feed = nx.erdos_renyi_graph(K, 0.2, seed = 5)
-    self.net_agents = nx.erdos_renyi_graph(A, 0.4, seed = 5)
+    self.net_feed = nx.erdos_renyi_graph(K, prob_ER_f, seed = 5)
+    self.net_agents = nx.erdos_renyi_graph(A, prob_ER_a, seed = 5)
     self.t = 0
     for v in self.net_agents.nodes:
         self.net_agents.nodes[v]['new_losses'] = []
         self.net_agents.nodes[v]['message'] = np.zeros(self.arms())
         self.net_agents.nodes[v]['T'] = np.zeros(self.arms())
         self.net_agents.nodes[v]['S'] = np.zeros(self.arms())
-        self.net_agents.nodes[v]['q'] = 1.
+        self.net_agents.nodes[v]['q'] = 1
         self.activations = []
         self.f = f
         self.n = n
@@ -91,7 +91,6 @@ class COOP_algo():
     self.P = np.ones((f_var, s_var))/f_var
     self.T = T
     self.buffer = deque()
-
     self.alpha_feed = len(nx.maximal_independent_set(nx.power(self.bandit.net_feed, self.bandit.f)))
     self.alpha_agents = len(nx.maximal_independent_set(nx.power(self.bandit.net_agents, self.bandit.n)))
     self.Q = np.sum([self.bandit.net_agents.nodes[v]['q'] for v in self.bandit.net_agents.nodes])
