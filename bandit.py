@@ -4,17 +4,18 @@ import networkx as nx
 from networkx.algorithms.approximation import independent_set
 from collections import deque
 import copy
+import matplotlib.pyplot as pp
 
 def ev_eta_fixed(K, T, af, aa, Q, f, n):
     return np.sqrt(np.log(K)/T/(af/(1-np.exp(-1))*(aa/Q+1)+f+n))
 
 class Bandit:
-  def __init__(self, means, A, K, n, f, p_ERa = 0.1, p_ERf = 0.1, q = 1):
+  def __init__(self, means, A, K, n, f, p_ERa = 0.1, p_ERf = 0.1, q = 1, seed_f =41, seed_a=42):
     assert len(means) == K
     self.means = means
     self.subopt = self.means - np.min(self.means)
-    self.net_feed = nx.erdos_renyi_graph(K, p_ERf, seed = 5)
-    self.net_agents = nx.erdos_renyi_graph(A, p_ERa, seed = 42)
+    self.net_feed = nx.erdos_renyi_graph(K, p_ERf, seed = seed_f)
+    self.net_agents = nx.erdos_renyi_graph(A, p_ERa, seed = seed_a)
     self.t = 0
     for v in self.net_agents.nodes:
         self.net_agents.nodes[v]['new_ls'] = []
@@ -27,6 +28,7 @@ class Bandit:
         self.n = n
         self.A = A
         self.K = K
+    
 
   def rounds(self):
     return self.t
