@@ -3,7 +3,7 @@ import bandit
 from collections import deque
 import networkx as nx
 import matplotlib
-matplotlib.use('Agg')
+# matplotlib.use('Agg')
 import matplotlib.pyplot as pp
 import multiprocessing as mp
 
@@ -12,16 +12,19 @@ def run_algo(ban, coop, T):
     for t in range(T):
         coop.act()
         r = np.append(r, ban.total_regret())
-    ########## SOME PRINT ######################################################
-        # print("----> Round =", t+1)
-        print("eta = ", coop.eta)
-        # print("total regret:", ban.total_regret())
-        # print("EDGES:", ban.net_agents.edges)
-        # print("optima arm:", arms_means[0])
-        # for v in ban.net_agents.nodes:
-        #     print("agent", v, "has neighbours:",[u for u in ban.net_agents.neighbors(v)],
-        #     "T:", ban.net_agents.nodes[v]['T'], "r:",np.dot(ban.subopt, ban.net_agents.nodes[v]['T']), "Tsub:", ban.t - ban.net_agents.nodes[v]['T'][0])
-    ############################################################################
+        ###### SOME PRINT ######################################################
+        if (t+1) % 1 == 0:
+            print("----> Round =", t+1)
+            print("eta =", coop.eta, "T =",coop.T, "alpha_f =", coop.alpha_feed,
+                    "alpha_a =", coop.alpha_agents,"n =",coop.bandit.n, "f =",coop.bandit.f)
+            # print("total regret:", ban.total_regret())
+            print("edges feedback network:", ban.net_feed.edges)
+            print("edges agent network:", ban.net_agents.edges)
+            # print("optima arm:", arms_mean[0])
+            # for v in ban.net_agents.nodes:
+            #     print("agent", v, "has neighbours:",[u for u in ban.net_agents.neighbors(v)],
+            #     "T:", ban.net_agents.nodes[v]['T'], "r:",np.dot(ban.subopt, ban.net_agents.nodes[v]['T']), "Tsub:", ban.t - ban.net_agents.nodes[v]['T'][0])
+        ########################################################################
     return ban, coop, r/coop.Q
 
 def UB(x_list, d, K, alpha_feed, alpha_agents):
@@ -31,16 +34,16 @@ def UB(x_list, d, K, alpha_feed, alpha_agents):
 
 # n = 2
 # f = 2
-# num_agents = 10
-# num_arms = 10
+# A = 10
+# K = 10
 # T = 500
-# prob_ER_a = 0.3; prob_ER_f = 0.2
-# arms_means = 1/2 * np.ones(num_arms)
-# arms_means[0] = 1/2 - np.sqrt(num_arms/T)
+# p_ERa = 0.3; p_ERf = 0.2
+# arms_mean = 1/2 * np.ones(K)
+# arms_mean[0] = 1/2 - np.sqrt(K/T)
 # sample = 1
 #
 # rr , rr_indepp = [], []
-# ban = bandit.Bandit(arms_means, num_agents, num_arms, n, f, prob_ER_a, prob_ER_f)
+# ban = bandit.Bandit(arms_mean, A, K, n, f, p_ERa, p_ERf)
 # coop = bandit.COOP_algo(ban, T)
 # for s in range(sample):
 #     ban.restart_bandit()
@@ -67,17 +70,25 @@ def UB(x_list, d, K, alpha_feed, alpha_agents):
 n = 2
 f = 2
 q = 1
-num_agents = 10
-num_arms = 10
-T = 1000
-prob_ER_a = 0.3; prob_ER_f = 0.2
-arms_means = 1/2 * np.ones(num_arms)
-arms_means[0] = 0.2 #1/2 - np.sqrt(num_arms/T)
-sample = 10
+A = 10
+K = 10
+T = 10
+p_ERa = 0.1; p_ERf = 0.1
+arms_mean = 1/2 * np.ones(K)
+arms_mean[0] = 0.2 #1/2 - np.sqrt(K/T)
+sample = 5
 
-def run_indep_coop(arms_means, num_agents, num_arms, n, f, prob_ER_a, prob_ER_f, T):
+# Draw networks
+# net_feed = nx.erdos_renyi_graph(K, p_ERf, seed = 5)
+# net_agents = nx.erdos_renyi_graph(A, p_ERa, seed = 5)
+# networkx.draw_networkx(net_agents, with_labels=labels)
+# plt.axis ("off")
+# plt.show()
+# plt.savefig("out.png")
+
+def run_indep_coop(arms_mean, A, K, n, f, p_ERa, p_ERf, T):
 # rr , rr_indepp = [], []
-    ban = bandit.Bandit(arms_means, num_agents, num_arms, n, f, prob_ER_a, prob_ER_f, q)
+    ban = bandit.Bandit(arms_mean, A, K, n, f, p_ERa, p_ERf, q)
     coop = bandit.COOP_algo(ban, T)
     ban, coop, r = run_algo(ban, coop, T)
     ban.restart_bandit()
@@ -88,9 +99,10 @@ def run_indep_coop(arms_means, num_agents, num_arms, n, f, prob_ER_a, prob_ER_f,
 
 if __name__ == "__main__":
     print("cpus number =", mp.cpu_count())
-    pool = mp.Pool(4) #(mp.cpu_count())
-    it = [(arms_means, num_agents, num_arms, n, f, prob_ER_a, prob_ER_f, T) for s in range(sample)]
+    pool = mp.Pool(1) #(mp.cpu_count())
+    it = [(arms_mean, A, K, n, f, p_ERa, p_ERf, T) for s in range(sample)]
     results = pool.starmap(run_indep_coop, it)
+    # results = run_indep_coop(arms_mean, A, K, n, f, p_ERa, p_ERf, T)
     pool.close()
     pool.join()
     results = np.array(results)
@@ -102,15 +114,15 @@ if __name__ == "__main__":
     means_indepp = np.mean(r_indepp, axis=0)
     errors_indepp = np.std(r_indepp, axis=0)
     x = [i for i in range(T)]
-    # bound = UB(x, n+f, num_arms, coop.alpha_feed, coop.alpha_agents)
+    # bound = UB(x, n+f, K, coop.alpha_feed, coop.alpha_agents)
     pp.figure(figsize=(10, 6))
     pp.plot(x, means, label = "COOPalgo", color='blue')
     pp.fill_between(x, means - errors,means + errors, color='blue', alpha=0.2)
     pp.plot(x, means_indepp, label = "independent", color='red')
     pp.fill_between(x, means_indepp - errors_indepp,means_indepp + errors_indepp, color='red', alpha=0.2)
     # pp.plot(x, bound, label = "theory", color='black')
-    tit = f"n={n}, f={f}, n agents={num_agents}, n arms={num_arms}, bias0={arms_means[0]:.3}"
-    tit += f", q={q}, samples={sample}, ER_a={prob_ER_a}, ER_f={prob_ER_f}"
+    tit = f"n={n}, f={f}, n agents={A}, n arms={K}, bias0={arms_mean[0]:.3}"
+    tit += f", q={q}, samples={sample}, ER_a={p_ERa}, ER_f={p_ERf}"
     pp.title(tit)
     pp.legend()
     pp.savefig('fig.pdf', dpi=600)

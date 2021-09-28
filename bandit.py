@@ -1,20 +1,24 @@
 import numpy as np
 import random
 import networkx as nx
+from networkx.algorithms.approximation import independent_set
 from collections import deque
 import copy
 
+def ev_eta_fixed(K, T, af, aa, Q, f, n):
+    return np.sqrt(np.log(K)/T/(af/(1-np.exp(-1))*(aa/Q+1)+f+n))
+
 class Bandit:
-  def __init__(self, means, A, K, n, f, prob_ER_a = 0.3, prob_ER_f = 0.2, q = 1):
+  def __init__(self, means, A, K, n, f, p_ERa = 0.1, p_ERf = 0.1, q = 1):
     assert len(means) == K
     self.means = means
     self.subopt = self.means - np.min(self.means)
-    self.net_feed = nx.erdos_renyi_graph(K, prob_ER_f, seed = 5)
-    self.net_agents = nx.erdos_renyi_graph(A, prob_ER_a, seed = 5)
+    self.net_feed = nx.erdos_renyi_graph(K, p_ERf, seed = 5)
+    self.net_agents = nx.erdos_renyi_graph(A, p_ERa, seed = 42)
     self.t = 0
     for v in self.net_agents.nodes:
-        self.net_agents.nodes[v]['new_losses'] = []
-        self.net_agents.nodes[v]['message'] = np.zeros(self.arms())
+        self.net_agents.nodes[v]['new_ls'] = []
+        self.net_agents.nodes[v]['m'] = np.zeros(self.arms())
         self.net_agents.nodes[v]['T'] = np.zeros(self.arms())
         self.net_agents.nodes[v]['S'] = np.zeros(self.arms())
         self.net_agents.nodes[v]['q'] = q
@@ -30,7 +34,7 @@ class Bandit:
   def arms(self):
     return len(self.means)
 
-  def regret(self, v): # this is strange, seems an expected reward but is not
+  def regret(self, v):
     return np.dot(self.subopt, self.net_agents.nodes[v]['T'])
 
   def total_regret(self):
@@ -52,32 +56,32 @@ class Bandit:
     self.t += 1
     # delete previous losses and prepare for new onens
     for v in self.net_agents.nodes:
-      self.net_agents.nodes[v]['new_losses'] = []
+      self.net_agents.nodes[v]['new_ls'] = []
     # Update when you are active and play:
     gen = (v for v in self.net_agents.nodes if self.activations[v]==1)
     for v in gen:
-      message = self.net_agents.nodes[v]['message'] # messages ~ probabilities
+      message = self.net_agents.nodes[v]['m'] # messages ~ probabilities
       i = arms[v]
       reward = rewards[i]
       self.net_agents.nodes[v]['T'][i] += 1
       self.net_agents.nodes[v]['S'][i] += reward
       neigh_feed = [j for j in nx.single_source_shortest_path_length(self.net_feed, i, self.f).keys()]
       for j in neigh_feed:
-        self.net_agents.nodes[v]['new_losses'].append((self.t, v, j, rewards[j], message[j]))
+        self.net_agents.nodes[v]['new_ls'].append((self.t, v, j, rewards[j], message[j]))
     # Update for all the messages coming from active agents:
     for v in self.net_agents.nodes:
       neigh_agents = [u for u in nx.single_source_shortest_path_length(self.net_agents, v, self.n).keys()]
       # print("neighbour of", v, "has elements", neigh_agents)
       for u in neigh_agents:
         if u != v:
-          self.net_agents.nodes[v]['new_losses'] += self.net_agents.nodes[u]['new_losses']
+          self.net_agents.nodes[v]['new_ls'] += self.net_agents.nodes[u]['new_ls']
     return 0
 
   def restart_bandit(self):
     self.t = 0
     for v in self.net_agents.nodes:
-        self.net_agents.nodes[v]['new_losses'] = []
-        self.net_agents.nodes[v]['message'] = np.zeros(self.arms())
+        self.net_agents.nodes[v]['new_ls'] = []
+        self.net_agents.nodes[v]['m'] = np.zeros(self.arms())
         self.net_agents.nodes[v]['T'] = np.zeros(self.arms())
         self.net_agents.nodes[v]['S'] = np.zeros(self.arms())
         self.activations = []
@@ -91,10 +95,10 @@ class COOP_algo():
     self.P = np.ones((f_var, s_var))/f_var
     self.T = T
     self.buffer = deque()
-    self.alpha_feed = len(nx.maximal_independent_set(nx.power(self.bandit.net_feed, self.bandit.f)))
-    self.alpha_agents = len(nx.maximal_independent_set(nx.power(self.bandit.net_agents, self.bandit.n)))
+    self.alpha_feed = len(independent_set.maximum_independent_set(nx.power(self.bandit.net_feed, self.bandit.f)))
+    self.alpha_agents = len(independent_set.maximum_independent_set(nx.power(self.bandit.net_agents, self.bandit.n)))
     self.Q = np.sum([self.bandit.net_agents.nodes[v]['q'] for v in self.bandit.net_agents.nodes])
-    self.eta = np.sqrt(np.log(self.bandit.K)/self.T/(self.alpha_feed/(1-np.exp(-1))*(self.alpha_agents/self.Q+1)+self.bandit.f+self.bandit.n))
+    self.eta = ev_eta_fixed(self.bandit.K, self.T, self.alpha_feed, self.alpha_agents, self.Q, self.bandit.f, self.bandit.n)
 
   def update(self, eta):
     for v in range(len(self.bandit.net_agents.nodes)):
@@ -119,7 +123,7 @@ class COOP_algo():
       return self.buffer[0]
 
   def ev_lhat(self, i, v, epsilon = 10**-20):
-    new_losses = self.bandit.net_agents.nodes[v]["new_losses"]
+    new_losses = self.bandit.net_agents.nodes[v]['new_ls']
     if len(new_losses) != 0:
       loss_comps = {(j, reward) for s, u, j, reward, prob in new_losses} # maybe add prob????
       seen_comps = {j for s, u, j, reward, prob in new_losses}
@@ -145,9 +149,9 @@ class COOP_algo():
     arms = [a for a in range(len(self.bandit.net_agents.nodes))]
     for v, act in enumerate(self.bandit.activations):
       prob = probs[:,v]
-      # print("NEW LOSSES AVAILABLE: ", self.bandit.net_agents.nodes[v]["new_losses"])
+      # print("NEW LOSSES AVAILABLE: ", self.bandit.net_agents.nodes[v]['new_ls'])
       # print("PREDICTION PROB: ", prob)
-      self.bandit.net_agents.nodes[v]['message'] = prob
+      self.bandit.net_agents.nodes[v]['m'] = prob
 
       if act == 1:
         [arms[v]] = np.random.choice(list(self.bandit.net_feed.nodes), 1, p = prob)
@@ -168,7 +172,7 @@ class COOP_algo():
     self.P = np.ones((f_var, s_var))/f_var
     self.T = T
     self.buffer = deque()
-    self.alpha_feed = len(nx.maximal_independent_set(nx.power(self.bandit.net_feed, self.bandit.f)))
-    self.alpha_agents = len(nx.maximal_independent_set(nx.power(self.bandit.net_agents, self.bandit.n)))
+    self.alpha_feed = len(independent_set.maximum_independent_set(nx.power(self.bandit.net_feed, self.bandit.f)))
+    self.alpha_agents = len(independent_set.maximum_independent_set(nx.power(self.bandit.net_agents, self.bandit.n)))
     self.Q = np.sum([self.bandit.net_agents.nodes[v]['q'] for v in self.bandit.net_agents.nodes])
-    self.eta = np.sqrt(np.log(self.bandit.K)/(self.T*self.alpha_feed*(self.alpha_agents/self.Q+1)+self.bandit.f+self.bandit.n))
+    self.eta = ev_eta_fixed(self.bandit.K, self.T, self.alpha_feed, self.alpha_agents, self.Q, self.bandit.f, self.bandit.n)
