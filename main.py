@@ -13,14 +13,14 @@ def run_algo(ban, coop, T):
         coop.act()
         r = np.append(r, ban.total_regret())
     ########## SOME PRINT ######################################################
-        print("----> Round =", t+1)
+        # print("----> Round =", t+1)
         print("eta = ", coop.eta)
-        print("total regret:", ban.total_regret())
-        print("EDGES:", ban.net_agents.edges)
-        print("optima arm:", arms_means[0])
-        for v in ban.net_agents.nodes:
-            print("agent", v, "has neighbours:",[u for u in ban.net_agents.neighbors(v)],
-            "T:", ban.net_agents.nodes[v]['T'], "r:",np.dot(ban.subopt, ban.net_agents.nodes[v]['T']), "Tsub:", ban.t - ban.net_agents.nodes[v]['T'][0])
+        # print("total regret:", ban.total_regret())
+        # print("EDGES:", ban.net_agents.edges)
+        # print("optima arm:", arms_means[0])
+        # for v in ban.net_agents.nodes:
+        #     print("agent", v, "has neighbours:",[u for u in ban.net_agents.neighbors(v)],
+        #     "T:", ban.net_agents.nodes[v]['T'], "r:",np.dot(ban.subopt, ban.net_agents.nodes[v]['T']), "Tsub:", ban.t - ban.net_agents.nodes[v]['T'][0])
     ############################################################################
     return ban, coop, r/coop.Q
 
@@ -69,10 +69,10 @@ f = 2
 q = 1
 num_agents = 10
 num_arms = 10
-T = 10
+T = 1000
 prob_ER_a = 0.3; prob_ER_f = 0.2
 arms_means = 1/2 * np.ones(num_arms)
-arms_means[0] = 0.1 #1/2 - np.sqrt(num_arms/T)
+arms_means[0] = 0.2 #1/2 - np.sqrt(num_arms/T)
 sample = 10
 
 def run_indep_coop(arms_means, num_agents, num_arms, n, f, prob_ER_a, prob_ER_f, T):
@@ -88,7 +88,7 @@ def run_indep_coop(arms_means, num_agents, num_arms, n, f, prob_ER_a, prob_ER_f,
 
 if __name__ == "__main__":
     print("cpus number =", mp.cpu_count())
-    pool = mp.Pool() #(mp.cpu_count())
+    pool = mp.Pool(4) #(mp.cpu_count())
     it = [(arms_means, num_agents, num_arms, n, f, prob_ER_a, prob_ER_f, T) for s in range(sample)]
     results = pool.starmap(run_indep_coop, it)
     pool.close()
@@ -113,4 +113,4 @@ if __name__ == "__main__":
     tit += f", q={q}, samples={sample}, ER_a={prob_ER_a}, ER_f={prob_ER_f}"
     pp.title(tit)
     pp.legend()
-    pp.savefig('tit.pdf', dpi=200)
+    pp.savefig('fig.pdf', dpi=600)

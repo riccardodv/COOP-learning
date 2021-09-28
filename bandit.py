@@ -106,10 +106,10 @@ class COOP_algo():
 
   def update_buffer_and_predict(self):
     # Adaptive learning rate:
-    self.eta = 1/np.sqrt(self.bandit.t+1)
-    self.update(self.eta)
-    # Fixed learning rate:
+    # self.eta = 1/np.sqrt(self.bandit.t+1)
     # self.update(self.eta)
+    # Fixed learning rate:
+    self.update(self.eta)
     # print("eta = ", self.eta)
     self.buffer.append(copy.copy(self.P))
     # print("self.buffer: ", self.buffer)
