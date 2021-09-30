@@ -87,4 +87,4 @@ if __name__ == "__main__":
     pp.xlabel("Number of Rounds")
     pp.ylabel("Network Regret")
     pp.legend(loc = 2)
-    pp.savefig(tit_f+'.pdf', dpi=600)
+    pp.savefig('./G/'+tit_f+'.pdf', dpi=600)
