@@ -4,7 +4,6 @@ import networkx as nx
 from networkx.algorithms.approximation import independent_set
 from collections import deque
 import copy
-import matplotlib.pyplot as pp
 
 def ev_eta_fixed(K, T, af, aa, Q, f, n):
     return np.sqrt(np.log(K)/T/(af/(1-np.exp(-1))*(aa/Q+1)+f+n))
@@ -28,7 +27,7 @@ class Bandit:
         self.n = n
         self.A = A
         self.K = K
-    
+
 
   def rounds(self):
     return self.t
@@ -41,8 +40,7 @@ class Bandit:
 
   def total_regret(self):
     R = 0
-    gen = (v for v in self.net_agents.nodes if self.activations[v]==1)
-    for v in gen:
+    v for v in self.net_agents.nodes:
       R += self.regret(v)
     return R
 
