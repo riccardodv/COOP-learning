@@ -32,7 +32,7 @@ def run_algo(ban, coop, T):
         ########################################################################
     return ban, coop, r/coop.Q
 
-def run_indep_coop(arms_mean, A, K, n, f, p_ERa, p_ERf, T):
+def run_algo_COOPAndIndep(arms_mean, A, K, n, f, p_ERa, p_ERf, T):
     ban = bandit.Bandit(arms_mean, A, K, n, f, p_ERa, p_ERf, q)
     coop = bandit.COOP_algo(ban, T)
     ban, coop, r = run_algo(ban, coop, T)
@@ -49,7 +49,7 @@ T = 1000
 p_ERa = 0.1; p_ERf = 0.1
 seed_f =41; seed_a=43
 arms_mean = 1/2 * np.ones(K)
-arms_mean[0] = 1/2 - np.sqrt(K/T)
+arms_mean[0] = 0. #1/2 - np.sqrt(K/T)
 sample = 10
 
 # # Draw networks
@@ -66,9 +66,9 @@ sample = 10
 
 
 if __name__ == "__main__":
-    pool = mp.Pool(1) # mp.cpu_count()
+    pool = mp.Pool() # mp.cpu_count()
     it = [(arms_mean, A, K, n, f, p_ERa, p_ERf, T) for s in range(sample)]
-    results = pool.starmap(run_indep_coop, it)
+    results = pool.starmap(run_algo_COOPAndIndep, it)
     pool.close()
     pool.join()
     results = np.array(results)
@@ -86,12 +86,12 @@ if __name__ == "__main__":
     pp.fill_between(x, means - errors,means + errors, color='blue', alpha=0.2)
     pp.plot(x, means_indepp, label = "independent", color='red')
     pp.fill_between(x, means_indepp - errors_indepp,means_indepp + errors_indepp, color='red', alpha=0.2)
-    pp.grid(which=both)
+    pp.grid()
     # pp.plot(x, bound, label = "theory", color='black')
-    tit_g = f"n={n}, f={f}, n agents={A}, n arms={K}, bias0={arms_mean[0]:.3}"
+    tit_g = f"n={n}, f={f}, agents={A}, arms={K}, bias0={arms_mean[0]:.3}"
     tit_g += f", q={q}, samples={sample}, ER_a={p_ERa}, ER_f={p_ERf}"
     tit_f = f"n={n}_f={f}_agents={A}_arms={K}_bias0={arms_mean[0]:.3}"
     tit_f += f"_q={q}_samples={sample}_ER_a={p_ERa}_ER_f={p_ERf}"
-    pp.title(tit)
+    pp.title(tit_g)
     pp.legend(loc = 2)
     pp.savefig(tit_f+'.pdf', dpi=600)

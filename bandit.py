@@ -28,7 +28,6 @@ class Bandit:
         self.A = A
         self.K = K
 
-
   def rounds(self):
     return self.t
 
@@ -77,8 +76,11 @@ class Bandit:
           self.net_agents.nodes[v]['new_ls'] += self.net_agents.nodes[u]['new_ls']
     return 0
 
-  def restart_bandit(self):
+  def restart_bandit(self, prepare_for_indep = True):
     self.t = 0
+    if prepare_for_indep:
+      self.f = 0
+      self.n = 0
     for v in self.net_agents.nodes:
         self.net_agents.nodes[v]['new_ls'] = []
         self.net_agents.nodes[v]['m'] = np.zeros(self.arms())
@@ -95,8 +97,8 @@ class COOP_algo():
     self.P = np.ones((f_var, s_var))/f_var
     self.T = T
     self.buffer = deque()
-    self.alpha_feed = len(independent_set.maximum_independent_set(nx.power(self.bandit.net_feed, self.bandit.f)))
-    self.alpha_agents = len(independent_set.maximum_independent_set(nx.power(self.bandit.net_agents, self.bandit.n)))
+    self.alpha_feed = self.bandit.K if self.bandit.f == 0 else len(independent_set.maximum_independent_set(nx.power(self.bandit.net_feed, self.bandit.f)))
+    self.alpha_agents = self.bandit.A if self.bandit.n == 0 else len(independent_set.maximum_independent_set(nx.power(self.bandit.net_agents, self.bandit.n)))
     self.Q = np.sum([self.bandit.net_agents.nodes[v]['q'] for v in self.bandit.net_agents.nodes])
     self.eta = ev_eta_fixed(self.bandit.K, self.T, self.alpha_feed, self.alpha_agents, self.Q, self.bandit.f, self.bandit.n)
 
@@ -110,10 +112,10 @@ class COOP_algo():
 
   def update_buffer_and_predict(self):
     # Adaptive learning rate:
-    # self.eta = 1/np.sqrt(self.bandit.t+1)
-    # self.update(self.eta)
-    # Fixed learning rate:
+    self.eta = 1/np.sqrt(self.bandit.t+1)
     self.update(self.eta)
+    # Fixed learning rate:
+    # self.update(self.eta)
     # print("eta = ", self.eta)
     self.buffer.append(copy.copy(self.P))
     # print("self.buffer: ", self.buffer)
@@ -172,7 +174,7 @@ class COOP_algo():
     self.P = np.ones((f_var, s_var))/f_var
     self.T = T
     self.buffer = deque()
-    self.alpha_feed = len(independent_set.maximum_independent_set(nx.power(self.bandit.net_feed, self.bandit.f)))
-    self.alpha_agents = len(independent_set.maximum_independent_set(nx.power(self.bandit.net_agents, self.bandit.n)))
+    self.alpha_feed = self.bandit.K if self.bandit.f == 0 else len(independent_set.maximum_independent_set(nx.power(self.bandit.net_feed, self.bandit.f)))
+    self.alpha_agents = self.bandit.A if self.bandit.n == 0 else len(independent_set.maximum_independent_set(nx.power(self.bandit.net_agents, self.bandit.n)))
     self.Q = np.sum([self.bandit.net_agents.nodes[v]['q'] for v in self.bandit.net_agents.nodes])
     self.eta = ev_eta_fixed(self.bandit.K, self.T, self.alpha_feed, self.alpha_agents, self.Q, self.bandit.f, self.bandit.n)
