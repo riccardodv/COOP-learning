@@ -40,7 +40,7 @@ class Bandit:
 
   def total_regret(self):
     R = 0
-    v for v in self.net_agents.nodes:
+    for v in self.net_agents.nodes:
       R += self.regret(v)
     return R
 
