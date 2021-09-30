@@ -44,12 +44,12 @@ def run_indep_coop(arms_mean, A, K, n, f, p_ERa, p_ERf, T):
 
 n = 2; f = 2
 A = 20; K = 20
-q = 1
+q = 1/A
 T = 1000
 p_ERa = 0.1; p_ERf = 0.1
 seed_f =41; seed_a=43
 arms_mean = 1/2 * np.ones(K)
-arms_mean[0] = 0.2 #1/2 - np.sqrt(K/T)
+arms_mean[0] = 1/2 - np.sqrt(K/T)
 sample = 10
 
 # # Draw networks
