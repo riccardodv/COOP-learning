@@ -86,9 +86,12 @@ if __name__ == "__main__":
     pp.fill_between(x, means - errors,means + errors, color='blue', alpha=0.2)
     pp.plot(x, means_indepp, label = "independent", color='red')
     pp.fill_between(x, means_indepp - errors_indepp,means_indepp + errors_indepp, color='red', alpha=0.2)
+    pp.grid(which=both)
     # pp.plot(x, bound, label = "theory", color='black')
-    tit = f"n={n}, f={f}, n agents={A}, n arms={K}, bias0={arms_mean[0]:.3}"
-    tit += f", q={q}, samples={sample}, ER_a={p_ERa}, ER_f={p_ERf}"
+    tit_g = f"n={n}, f={f}, n agents={A}, n arms={K}, bias0={arms_mean[0]:.3}"
+    tit_g += f", q={q}, samples={sample}, ER_a={p_ERa}, ER_f={p_ERf}"
+    tit_f = f"n={n}_f={f}_agents={A}_arms={K}_bias0={arms_mean[0]:.3}"
+    tit_f += f"_q={q}_samples={sample}_ER_a={p_ERa}_ER_f={p_ERf}"
     pp.title(tit)
-    pp.legend()
-    pp.savefig('fig.pdf', dpi=600)
+    pp.legend(loc = 2)
+    pp.savefig(tit_f+'.pdf', dpi=600)
