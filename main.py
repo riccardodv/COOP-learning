@@ -50,7 +50,7 @@ def run_algo(q, A, K, n, f, T, p_ERa, p_ERf, arms_mean):
 # pp.show()
 # pp.savefig("out.pdf")
 
-# need to fix q = 1/A in input this function
+
 def run_experiment(q = [1], A = [10], K = [10], n = [2], f = [2], T = 1000, p_ERa = 0.1, p_ERf = 0.1, sample = 10):
     seed_f =41; seed_a=43
     comb_pmts = [[*pmts, T, p_ERa, p_ERf] for pmts in itertools.product(q, A, K, n, f)]
@@ -59,7 +59,7 @@ def run_experiment(q = [1], A = [10], K = [10], n = [2], f = [2], T = 1000, p_ER
         if __name__ == "__main__":
             (q_, A_, K_, n_, f_, T_, p_ERa_, p_ERf_) = pmts
             arms_mean = 1/2 * np.ones(K_)
-            arms_mean[0] = 0. #1/2 - np.sqrt(K_/T_)
+            arms_mean[0] = 1/2 - np.sqrt(K_/T_)
             pmts.append(arms_mean)
             pmts_indep = [q_, A_, K_, 0, f_, T_, 0, p_ERf_, arms_mean]
             it = [pmts for s in range(sample)]
