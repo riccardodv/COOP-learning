@@ -6,13 +6,15 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as pp
 import multiprocessing as mp
+import itertools
+import copy
 
 def UB(x_list, d, K, alpha_feed, alpha_agents):
     f = lambda x: d+2*np.sqrt(np.log(K)*x*(alpha_feed/(1-np.exp(-1))*(alpha_agents/coop.Q+1)+d))
     l = [x for x in map(f, x_list)]
     return l
 
-def run_algo(arms_mean, A, K, n, f, p_ERa, p_ERf, T):
+def run_algo(q, A, K, n, f, T, arms_mean, p_ERa, p_ERf):
     ban = bandit.Bandit(arms_mean, A, K, n, f, p_ERa, p_ERf, q)
     coop = bandit.COOP_algo(ban, T)
     r = np.array([])
@@ -34,15 +36,7 @@ def run_algo(arms_mean, A, K, n, f, p_ERa, p_ERf, T):
         ########################################################################
     return r
 
-n = 2; f = 2
-A = 20; K = 20
-q = 1/A
-T = 10
-p_ERa = 0.1; p_ERf = 0.1
-seed_f =41; seed_a=43
-arms_mean = 1/2 * np.ones(K)
-arms_mean[0] = 0. #1/2 - np.sqrt(K/T)
-sample = 10
+
 
 # # Draw networks
 # w = 6; h = 6; d = 300;
@@ -56,35 +50,52 @@ sample = 10
 # pp.show()
 # pp.savefig("out.pdf")
 
-if __name__ == "__main__":
-    pool = mp.Pool() # mp.cpu_count()
-    it = [(arms_mean, A, K, n, f, p_ERa, p_ERf, T) for s in range(sample)]
-    it_indep = [(arms_mean, A, K, 0, 0, 0., p_ERf, T) for s in range(sample)]
-    results = pool.starmap(run_algo, it+it_indep)
-    pool.close()
-    pool.join()
-    results = np.array(results)
-    r = results[:sample,:]
-    r_indepp = results[sample:,:]
-    means = np.mean(r, axis=0)
-    errors = np.std(r, axis=0)
-    means_indepp = np.mean(r_indepp, axis=0)
-    errors_indepp = np.std(r_indepp, axis=0)
-    x = [i for i in range(T)]
-    # bound = UB(x, n+f, K, coop.alpha_feed, coop.alpha_agents)
-    pp.figure(figsize=(10, 6))
-    pp.plot(x, means, label = r"EXP3-$\alpha^2$", color='blue')
-    pp.fill_between(x, means - errors,means + errors, color='blue', alpha=0.2)
-    pp.plot(x, means_indepp, label = "No Cooperation", color='red')
-    pp.fill_between(x, means_indepp - errors_indepp,means_indepp + errors_indepp, color='red', alpha=0.2)
-    pp.grid()
-    # pp.plot(x, bound, label = "theory", color='black')
-    tit_g = f"n={n}, f={f}, agents={A}, arms={K}, bias0={arms_mean[0]:.3}"
-    tit_g += f", q={q}, samples={sample}, ER_a={p_ERa}, ER_f={p_ERf}"
-    tit_f = f"n={n}_f={f}_agents={A}_arms={K}_bias0={arms_mean[0]:.3}"
-    tit_f += f"_q={q}_samples={sample}_ER_a={p_ERa}_ER_f={p_ERf}"
-    pp.title(tit_g)
-    pp.xlabel("Number of Rounds")
-    pp.ylabel("Network Regret")
-    pp.legend(loc = 2)
-    pp.savefig(tit_f+'.pdf', dpi=600)
+def run_experiment(q = [1], n = [2], f = [2], A = [20], K = [20], T = 1000, sample = 10, p_ERa = 0.1, p_ERf = 0.1):
+    seed_f =41; seed_a=43
+    arms_mean = 1/2 * np.ones(K)
+    arms_mean[0] = 0. #1/2 - np.sqrt(K/T)
+
+    comb_pmts = [[*pmts, T, arms_mean, p_ERa, p_ERf] for pmts in itertools.product(q, A, K, n, f)]
+    # n_indep = [0 for i in len(n)]
+    # f_indep = [0 for i in len(f)]
+    # comb_pmts_indep = [(*pmts, T, arms_mean, 0., p_ERf) for pmts in itertools.product(q, A, K, n_indep, f_indep)]
+    # q, A, K, n, f, T, arms_mean, p_ERa, p_ERf
+
+    for pmts in comb_pmts:
+        if __name__ == "__main__":
+            pool = mp.Pool() # mp.cpu_count()
+            # it = [(arms_mean, A, K, n, f, p_ERa, p_ERf, T) for s in range(sample)]
+            pmts_indep = copy.copy(pmts)
+            pmts_indep[3]=0; pmts_indep[4]=0; pmts_indep[7]=0
+            it = [pmts for s in range(sample)]
+            it_indep = [pmts_indep for s in range(sample)]
+            results = pool.starmap(run_algo, it+it_indep)
+            pool.close(); pool.join()
+            results = np.array(results)
+            r = results[:sample,:]
+            r_indepp = results[sample:,:]
+            means = np.mean(r, axis=0)
+            errors = np.std(r, axis=0)
+            means_indepp = np.mean(r_indepp, axis=0)
+            errors_indepp = np.std(r_indepp, axis=0)
+            x = [i for i in range(T)]
+            # bound = UB(x, n+f, K, coop.alpha_feed, coop.alpha_agents)
+            pp.figure(figsize=(10, 6))
+            pp.plot(x, means, label = r"EXP3-$\alpha^2$", color='blue')
+            pp.fill_between(x, means - errors,means + errors, color='blue', alpha=0.2)
+            pp.plot(x, means_indepp, label = "No Cooperation", color='red')
+            pp.fill_between(x, means_indepp - errors_indepp,means_indepp + errors_indepp, color='red', alpha=0.2)
+            pp.grid()
+            # pp.plot(x, bound, label = "theory", color='black')
+            (q_, A_, K_, n_, f_, T_, arms_mean_, p_ERa_, p_ERf_) = pmts
+            tit_g = f"n={n_}, f={f_}, agents={A_}, arms={K_}, bias0={arms_mean_[0]:.3}"
+            tit_g += f", q={q_}, samples={sample}, ER_a={p_ERa_}, ER_f={p_ERf_}"
+            tit_f = f"q={q_}_n={n_}_f={f_}_agents={A_}_arms={K_}_T={T_}_samples={sample}"
+            tit_f += f"_bias0={arms_mean_[0]:.3}_ER_a={p_ERa_}_ER_f={p_ERf_}"
+            pp.title(tit_g)
+            pp.xlabel("Number of Rounds")
+            pp.ylabel("Network Regret")
+            pp.legend(loc = 2)
+            pp.savefig(tit_f+'.pdf', dpi=600)
+
+run_experiment(q=[0.5,1])
