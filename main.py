@@ -14,7 +14,7 @@ def UB(x_list, d, K, alpha_feed, alpha_agents):
     l = [x for x in map(f, x_list)]
     return l
 
-def run_algo(q, A, K, n, f, T, arms_mean, p_ERa, p_ERf):
+def run_algo(q, A, K, n, f, T, p_ERa, p_ERf, arms_mean):
     ban = bandit.Bandit(arms_mean, A, K, n, f, p_ERa, p_ERf, q)
     coop = bandit.COOP_algo(ban, T)
     r = np.array([])
@@ -50,27 +50,24 @@ def run_algo(q, A, K, n, f, T, arms_mean, p_ERa, p_ERf):
 # pp.show()
 # pp.savefig("out.pdf")
 
-def run_experiment(q = [1], n = [2], f = [2], A = [20], K = [20], T = 1000, sample = 10, p_ERa = 0.1, p_ERf = 0.1):
+# need to fix q = 1/A in input this function
+def run_experiment(q = [1], A = [10], K = [10], n = [2], f = [2], T = 1000, p_ERa = 0.1, p_ERf = 0.1, sample = 10):
     seed_f =41; seed_a=43
-    arms_mean = 1/2 * np.ones(K)
-    arms_mean[0] = 0. #1/2 - np.sqrt(K/T)
-
-    comb_pmts = [[*pmts, T, arms_mean, p_ERa, p_ERf] for pmts in itertools.product(q, A, K, n, f)]
-    # n_indep = [0 for i in len(n)]
-    # f_indep = [0 for i in len(f)]
-    # comb_pmts_indep = [(*pmts, T, arms_mean, 0., p_ERf) for pmts in itertools.product(q, A, K, n_indep, f_indep)]
-    # q, A, K, n, f, T, arms_mean, p_ERa, p_ERf
+    comb_pmts = [[*pmts, T, p_ERa, p_ERf] for pmts in itertools.product(q, A, K, n, f)]
 
     for pmts in comb_pmts:
         if __name__ == "__main__":
-            pool = mp.Pool() # mp.cpu_count()
-            # it = [(arms_mean, A, K, n, f, p_ERa, p_ERf, T) for s in range(sample)]
-            pmts_indep = copy.copy(pmts)
-            pmts_indep[3]=0; pmts_indep[4]=0; pmts_indep[7]=0
+            (q_, A_, K_, n_, f_, T_, p_ERa_, p_ERf_) = pmts
+            arms_mean = 1/2 * np.ones(K_)
+            arms_mean[0] = 0. #1/2 - np.sqrt(K_/T_)
+            pmts.append(arms_mean)
+            pmts_indep = [q_, A_, K_, 0, f_, T_, 0, p_ERf_, arms_mean]
             it = [pmts for s in range(sample)]
             it_indep = [pmts_indep for s in range(sample)]
+            pool = mp.Pool() # mp.cpu_count()
             results = pool.starmap(run_algo, it+it_indep)
             pool.close(); pool.join()
+
             results = np.array(results)
             r = results[:sample,:]
             r_indepp = results[sample:,:]
@@ -87,15 +84,15 @@ def run_experiment(q = [1], n = [2], f = [2], A = [20], K = [20], T = 1000, samp
             pp.fill_between(x, means_indepp - errors_indepp,means_indepp + errors_indepp, color='red', alpha=0.2)
             pp.grid()
             # pp.plot(x, bound, label = "theory", color='black')
-            (q_, A_, K_, n_, f_, T_, arms_mean_, p_ERa_, p_ERf_) = pmts
-            tit_g = f"n={n_}, f={f_}, agents={A_}, arms={K_}, bias0={arms_mean_[0]:.3}"
+            tit_g = f"n={n_}, f={f_}, agents={A_}, arms={K_}, bias0={arms_mean[0]:.3}"
             tit_g += f", q={q_}, samples={sample}, ER_a={p_ERa_}, ER_f={p_ERf_}"
             tit_f = f"q={q_}_n={n_}_f={f_}_agents={A_}_arms={K_}_T={T_}_samples={sample}"
-            tit_f += f"_bias0={arms_mean_[0]:.3}_ER_a={p_ERa_}_ER_f={p_ERf_}"
+            tit_f += f"_bias0={arms_mean[0]:.3}_ER_a={p_ERa_}_ER_f={p_ERf_}"
             pp.title(tit_g)
             pp.xlabel("Number of Rounds")
             pp.ylabel("Network Regret")
             pp.legend(loc = 2)
-            pp.savefig(tit_f+'.pdf', dpi=600)
+            pp.savefig('G/'+tit_f+'.pdf', dpi=600)
+    return 0
 
-run_experiment(q=[0.5,1])
+run_experiment(q=[1, 0.5, 1/20], f=[2], n=[2], K=[20], A=[20], T=1000, sample=10)
