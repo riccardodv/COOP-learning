@@ -30,7 +30,7 @@ def plot_COOPvsNOcoop(results, pmts, sample):
     # tit_g = f"n={n_}, f={f_}, agents={A_}, arms={K_}, bias0={arms_mean[0]:.3}"
     # tit_g += f", q={q_}, samples={sample}, ER_a={p_ERa_}, ER_f={p_ERf_}"
     tit_f = f"q={q}_n={n}_f={f}_agents={A}_arms={K}_T={T}_samples={sample}"
-    tit_f += f"_bias0={arms_mean[0]:.3}_ER_a={p_ERa}_ER_f={p_ERf}"
+    tit_f += f"_bias0={arms_mean[0]:.3}_pER_a={p_ERa}_pER_f={p_ERf}"
     # pp.title(tit_g)
     pp.xlabel("Number of Rounds")
     pp.ylabel("Network Regret")
@@ -100,4 +100,4 @@ def run_experiment(q = [1,0.5,1/20], A = [20], K = [20], n = [2], f = [2], T = 1
             plot_COOPvsNOcoop(results, pmts, sample)
     return 0
 
-run_experiment(q=[0.5], f=[2], n=[2], K=[20], A=[20], T=100, sample=10, true_bias=True, cpu_num=None)
+run_experiment(q=[1,0.5,0.05], f=[2], n=[2], K=[20], A=[20], T=100, sample=20, true_bias=True, cpu_num=None)
