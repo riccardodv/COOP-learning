@@ -78,7 +78,7 @@ def run_algo(q, A, K, n, f, T, p_ERa, p_ERf, arms_mean):
         ########################################################################
     return r
 
-def run_experiment(q = [1,0.5,1/20], A = [20], K = [20], n = [2], f = [2], T = 1000, p_ERa = 0.1, p_ERf = 0.1, sample = 10, true_bias = True, cpu_num = None):
+def run_experiment(q = [1,0.5,1/20], A = [20], K = [20], n = [2], f = [2], T = 1000, p_ERa = 0.1, p_ERf = 0.1, sample = 10, true_bias = True, bias=0.2, cpu_num = None):
     seed_f =41; seed_a=43
     comb_pmts = [[*pmts, T, p_ERa, p_ERf] for pmts in itertools.product(q, A, K, n, f)]
     plot_GraphGraph(comb_pmts[0], seed_f, seed_a)
@@ -88,7 +88,7 @@ def run_experiment(q = [1,0.5,1/20], A = [20], K = [20], n = [2], f = [2], T = 1
         if true_bias:
             arms_mean[0] = 1/2 - np.sqrt(K_/T_)
         else:
-            arms_mean[0] = 0.
+            arms_mean[0] = bias
         pmts.append(arms_mean)
         pmts_indep = [q_, A_, K_, 0, f_, T_, 0, p_ERf_, arms_mean]
         it = [pmts for s in range(sample)]
@@ -100,4 +100,4 @@ def run_experiment(q = [1,0.5,1/20], A = [20], K = [20], n = [2], f = [2], T = 1
             plot_COOPvsNOcoop(results, pmts, sample)
     return 0
 
-run_experiment(q=[1,0.5,0.05], f=[2], n=[2], K=[20], A=[20], T=100, sample=20, true_bias=True, cpu_num=None)
+run_experiment(q=[1,0.5,0.05], f=[2], n=[2], K=[20], A=[20], T=1000, sample=20, true_bias=False, bias=0.2, cpu_num=None)
