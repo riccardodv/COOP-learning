@@ -100,10 +100,10 @@ class COOP_algo():
 
   def update_buffer_and_predict(self):
     # Adaptive learning rate:
-    self.eta = 1/np.sqrt(self.bandit.t+1)
-    self.update(self.eta)
-    # Fixed learning rate:
+    # self.eta = 1/np.sqrt(self.bandit.t+1)
     # self.update(self.eta)
+    # Fixed learning rate:
+    self.update(self.eta)
     self.buffer.append(copy.copy(self.P))
     if self.bandit.t >= self.bandit.f + self.bandit.n:
       return self.buffer.popleft()
