@@ -78,14 +78,14 @@ def run_algo(q, A, K, n, f, T, p_ERa, p_ERf, arms_mean, lr):
         ########################################################################
     return r
 
-def run_experiment(q = [1,0.5,1/20], A = [20], K = [20], n = [2], f = [2], T = 1000, p_ERa = 0.1, p_ERf = 0.1, sample = 10, true_bias = True, bias=0.2, lr='dt', cpu_num = None):
+def run_experiment(q = [1,0.5,1/20], A = [20], K = [20], n = [2], f = [2], T = 1000, p_ERa = 0.1, p_ERf = 0.1, sample = 10, LB_bias = True, bias=0.2, lr='dt', cpu_num = None):
     seed_f =41; seed_a=43
     comb_pmts = [[*pmts, T, p_ERa, p_ERf] for pmts in itertools.product(q, A, K, n, f)]
     plot_GraphGraph(comb_pmts[0], seed_f, seed_a)
     for pmts in comb_pmts:
         (q_, A_, K_, n_, f_, T_, p_ERa_, p_ERf_) = pmts
         arms_mean = 1/2 * np.ones(K_)
-        if true_bias:
+        if LB_bias:
             arms_mean[0] = 1/2 - np.sqrt(K_/T_)
         else:
             arms_mean[0] = bias
@@ -101,4 +101,4 @@ def run_experiment(q = [1,0.5,1/20], A = [20], K = [20], n = [2], f = [2], T = 1
             plot_COOPvsNOcoop(results, pmts, sample)
     return 0
 
-run_experiment(q=[1,0.5,0.05], f=[2], n=[2], K=[20], A=[20], T=1000, sample=10, true_bias=True, bias=0., lr = 'dt', cpu_num=None)
+run_experiment(q=[1,0.5,0.05], f=[2], n=[2], K=[20], A=[20], T=1000, sample=3, LB_bias=True, bias=0., lr = 'dt', cpu_num=None)
