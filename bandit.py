@@ -6,10 +6,6 @@ from collections import deque
 import copy
 
 
-def ev_eta_fixed(K, T, af, aa, Q, f, n):
-    return np.sqrt(np.log(K)/T/(af/(1-np.exp(-1))*(aa/Q+1)+f+n))
-
-
 class Bandit:
   def __init__(self, means, A, K, n, f, p_ERa = 0.1, p_ERf = 0.1, q = 1, seed_f =41, seed_a=42):
     assert len(means) == K
@@ -82,19 +78,18 @@ class Bandit:
 class COOP_algo():
   def __init__(self, bandit, lr_key='0', T=100):
     self.bandit = bandit
-    f_var = self.bandit.arms()
-    s_var = self.bandit.net_agents.number_of_nodes()
-    self.W = np.ones((f_var, s_var))
-    self.P = np.ones((f_var, s_var))/f_var
+    self.W = np.ones((self.bandit.K, self.bandit.A))
+    self.P = np.ones((self.bandit.K, self.bandit.A))/self.bandit.K
     self.T = T
     self.buffer = deque()
     self.alpha_feed = self.bandit.K if self.bandit.f == 0 else len(independent_set.maximum_independent_set(nx.power(self.bandit.net_feed, self.bandit.f)))
     self.alpha_agents = self.bandit.A if self.bandit.n == 0 else len(independent_set.maximum_independent_set(nx.power(self.bandit.net_agents, self.bandit.n)))
     self.Q = np.sum([self.bandit.net_agents.nodes[v]['q'] for v in self.bandit.net_agents.nodes])
-    self.eta = np.ones(self.bandit.A)*ev_eta_fixed(self.bandit.K, self.T, self.alpha_feed, self.alpha_agents, self.Q, self.bandit.f, self.bandit.n)
-    # self.lr = {'0' : 'adaptive', '1' : 'fixed', '2' : 'doubling trick'}
-    # doubling trick
-    self.doubT = {'r' : np.ones(s_var)*(np.floor(np.log2(np.log(self.bandit.K)))+1), 'X' : np.zeros(s_var), 'c' : np.zeros(s_var)}
+    self.eta = np.ones(self.bandit.A)
+    self.doubT = {'r' : np.ones(self.bandit.A)*(np.floor(np.log2(np.log(self.bandit.K)))+1), 'X' : np.zeros(self.bandit.A), 'c' : np.zeros(self.bandit.A)}
+
+  def ev_eta_fixed(self, K, T, af, aa, Q, f, n):
+      return np.sqrt(np.log(K)/T/(af/(1-np.exp(-1))*(aa/Q+1)+f+n))
 
   def ev_X(self, v, epsilon = 10**-20):
     d = self.bandit.n+self.bandit.f
@@ -124,24 +119,27 @@ class COOP_algo():
     for v in range(len(self.bandit.net_agents.nodes)):
       self.P[:,v] = self.W[:,v]/np.linalg.norm(self.W[:,v], ord=1)
 
-  def update_buffer_and_predict(self):
-    ##### Adaptive learning rate:
-    # self.eta.fill(1/np.sqrt(self.bandit.t+1))
-    # self.update(self.eta)
-    ##### Fixed learning rate:
-    # self.update(self.eta)
-    ##### Doubling Trick
-    for v in range(self.bandit.A):
-      if self.doubT['X'][v] <= 2**self.doubT['r'][v]:
-        self.doubT['c'][v] += 1
-        # self.doubT['r'][v] += 1
-        self.doubT['X'][v] += self.ev_X(v)
-      else:
-        self.eta[v] = np.sqrt(np.log(self.bandit.K)/(2**self.doubT['r'][v]))
-        self.doubT['c'][v] = 0
-        self.doubT['r'][v] += 1
+  def update_buffer_and_predict(self, lr):
+    if lr == 'adaptive':
+      self.eta.fill(1/np.sqrt(self.bandit.t+1))
+    elif lr == 'fixed':
+      self.eta.fill(self.ev_eta_fixed(self.bandit.K, self.T, self.alpha_feed, self.alpha_agents, self.Q, self.bandit.f, self.bandit.n))
+    elif lr == 'dt':
+      if self.bandit.t==0:
+        self.eta.fill(np.sqrt(np.log(self.bandit.K)/(2**self.doubT['r'][0])))
+      for v in range(self.bandit.A):
+        if self.doubT['X'][v] <= 2**self.doubT['r'][v]:
+          self.doubT['c'][v] += 1
+          self.doubT['X'][v] += self.ev_X(v)
+        else:
+          self.doubT['r'][v] += 1
+          self.eta[v] = np.sqrt(np.log(self.bandit.K)/(2**self.doubT['r'][v]))
+          self.doubT['c'][v] = 0
+          self.doubT['X'][v] = 0
+    else:
+      assert False
+
     self.update(self.eta)
-    #####
     self.buffer.append(copy.copy(self.P))
     if self.bandit.t >= self.bandit.f + self.bandit.n:
       return self.buffer.popleft()
@@ -169,8 +167,8 @@ class COOP_algo():
     else:
       return 0.
 
-  def sample(self):
-    probs = self.update_buffer_and_predict()
+  def sample(self, lr):
+    probs = self.update_buffer_and_predict(lr)
     arms = [a for a in range(len(self.bandit.net_agents.nodes))]
     for v, act in enumerate(self.bandit.activations):
       prob = probs[:,v]
@@ -181,6 +179,6 @@ class COOP_algo():
         arms[v] = None
     return arms
 
-  def act(self):
+  def act(self, lr):
     self.bandit.activate_players()
-    self.bandit.play(self.sample())
+    self.bandit.play(self.sample(lr))
