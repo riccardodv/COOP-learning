@@ -101,4 +101,4 @@ def run_experiment(q = [1,0.5,1/20], A = [20], K = [20], n = [2], f = [2], T = 1
             plot_COOPvsNOcoop(results, pmts, sample)
     return 0
 
-run_experiment(q=[1,0.5,0.05], f=[2], n=[2], K=[20], A=[20], T=1000, sample=10, true_bias=True, bias=0., lr = 'dt', cpu_num=1)
+run_experiment(q=[1,0.5,0.05], f=[2], n=[2], K=[20], A=[20], T=1000, sample=10, true_bias=True, bias=0., lr = 'dt', cpu_num=None)
