@@ -109,8 +109,8 @@ class COOP_algo():
       P = np.sum([self.P[j,u] for j in neigh_feed])
       I_P = 1 - self.bandit.net_agents.nodes[u]['q'] * P
       prod *= I_P
-      b = 1 - prod + epsilon
-      return b
+    b = 1 - prod + epsilon
+    return b
 
   def update(self, eta):
     for v in range(len(self.bandit.net_agents.nodes)):
@@ -138,7 +138,6 @@ class COOP_algo():
           self.doubT['X'][v] = 0
     else:
       assert False
-
     self.update(self.eta)
     self.buffer.append(copy.copy(self.P))
     if self.bandit.t >= self.bandit.f + self.bandit.n:
