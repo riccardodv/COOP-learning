@@ -66,7 +66,7 @@ def run_algo(q, A, K, n, f, T, p_ERa, p_ERf, arms_mean, lr):
         ###### SOME PRINT ######################################################
         if (t+1) % 1 == 0:
             print("-----> Round:", t+1)
-            print("eta[0] =", coop.eta[0], "|| T =",coop.T, "|| alpha_f =", coop.alpha_feed,
+            print("eta[0] =", coop.eta[0], "eta[1] =", coop.eta[1], "|| T =",coop.T, "|| alpha_f =", coop.alpha_feed,
                     "|| alpha_a =", coop.alpha_agents,"|| n =",coop.bandit.n, "|| f =",coop.bandit.f)
             # print("total regret:", ban.total_regret())
             # print("edges feedback network:", ban.net_feed.edges)
@@ -101,4 +101,4 @@ def run_experiment(q = [1,0.5,1/20], A = [20], K = [20], n = [2], f = [2], T = 1
             plot_COOPvsNOcoop(results, pmts, sample)
     return 0
 
-run_experiment(q=[1,0.5,0.05], f=[2], n=[2], K=[20], A=[20], T=1000, sample=10, true_bias=True, bias=0., lr = 'dt', cpu_num=None)
+run_experiment(q=[1,0.5,0.05], f=[2], n=[2], K=[20], A=[20], T=1000, sample=10, true_bias=True, bias=0., lr = 'dt', cpu_num=1)

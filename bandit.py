@@ -76,7 +76,7 @@ class Bandit:
 
 
 class COOP_algo():
-  def __init__(self, bandit, lr_key='0', T=100):
+  def __init__(self, bandit, T=100):
     self.bandit = bandit
     self.W = np.ones((self.bandit.K, self.bandit.A))
     self.P = np.ones((self.bandit.K, self.bandit.A))/self.bandit.K
