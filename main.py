@@ -47,6 +47,7 @@ def plot_GraphGraph(pmts, seed_f, seed_a):
     pp.savefig("G_f.pdf")
     pp.figure(figsize=(w, h), dpi=d)
     net_agents = nx.erdos_renyi_graph(A_, p_ERa_, seed = seed_a)
+    print('-------', A_, p_ERa_, seed_a)
     nx.draw_networkx(net_agents, pos=nx.spring_layout(net_agents), node_color ="lightblue", alpha=0.9)
     pp.axis ("off")
     pp.savefig("G_a.pdf")
@@ -79,26 +80,26 @@ def run_algo(q, A, K, n, f, T, p_ERa, p_ERf, arms_mean, lr):
     return r
 
 def run_experiment(q = [1,0.5,1/20], A = [20], K = [20], n = [2], f = [2], T = 1000, p_ERa = 0.1, p_ERf = 0.1, sample = 10, LB_bias = True, bias=0.2, lr='dt', cpu_num = None):
-    seed_f =41; seed_a=43
-    comb_pmts = [[*pmts, T, p_ERa, p_ERf] for pmts in itertools.product(q, A, K, n, f)]
-    plot_GraphGraph(comb_pmts[0], seed_f, seed_a)
-    for pmts in comb_pmts:
-        (q_, A_, K_, n_, f_, T_, p_ERa_, p_ERf_) = pmts
-        arms_mean = 1/2 * np.ones(K_)
-        if LB_bias:
-            arms_mean[0] = 1/2 - np.sqrt(K_/T_)
-        else:
-            arms_mean[0] = bias
-        pmts.append(arms_mean)
-        pmts.append(lr)
-        pmts_indep = [q_, A_, K_, 0, f_, T_, 0, p_ERf_, arms_mean, lr]
-        it = [pmts for s in range(sample)]
-        it_indep = [pmts_indep for s in range(sample)]
-        if __name__ == "__main__":
+    if __name__ == "__main__":
+        seed_f = 41; seed_a = 42 # problem of implementation here, not nice - see bandit.py
+        comb_pmts = [[*pmts, T, p_ERa, p_ERf] for pmts in itertools.product(q, A, K, n, f)]
+        plot_GraphGraph(comb_pmts[0], seed_f, seed_a)
+        for pmts in comb_pmts:
+            (q_, A_, K_, n_, f_, T_, p_ERa_, p_ERf_) = pmts
+            arms_mean = 1/2 * np.ones(K_)
+            if LB_bias:
+                arms_mean[0] = 1/2 - np.sqrt(K_/T_)
+            else:
+                arms_mean[0] = bias
+            pmts.append(arms_mean)
+            pmts.append(lr)
+            pmts_indep = [q_, A_, K_, 0, f_, T_, 0, p_ERf_, arms_mean, lr]
+            it = [pmts for s in range(sample)]
+            it_indep = [pmts_indep for s in range(sample)]
             pool = mp.Pool(cpu_num) # mp.cpu_count()
             results = pool.starmap(run_algo, it+it_indep)
             pool.close(); pool.join()
             plot_COOPvsNOcoop(results, pmts, sample)
     return 0
 
-run_experiment(q=[1,0.5,0.05], f=[2], n=[2], K=[20], A=[20], T=1000, sample=3, LB_bias=True, bias=0., lr = 'dt', cpu_num=None)
+run_experiment(q=[1], f=[1], n=[1], K=[5], A=[5], T=100, sample=1, LB_bias=False, bias=0., lr = 'dt', cpu_num=1, p_ERa = 0.8, p_ERf = 0.8)
