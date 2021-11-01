@@ -14,17 +14,23 @@ class Bandit:
     self.net_feed = nx.erdos_renyi_graph(K, p_ERf, seed = seed_f)
     self.net_agents = nx.erdos_renyi_graph(A, p_ERa, seed = seed_a)
     self.t = 0
+    self.activations = []
+    self.f = f
+    self.n = n
+    self.A = A
+    self.K = K
+    self.neigh_agents = [0]*self.A
+    self.neigh_feed = [0]*self.K
+
     for v in self.net_agents.nodes:
         self.net_agents.nodes[v]['new_ls'] = []
         self.net_agents.nodes[v]['m'] = np.zeros(self.arms())
         self.net_agents.nodes[v]['T'] = np.zeros(self.arms())
         self.net_agents.nodes[v]['S'] = np.zeros(self.arms())
         self.net_agents.nodes[v]['q'] = q
-        self.activations = []
-        self.f = f
-        self.n = n
-        self.A = A
-        self.K = K
+        self.neigh_agents[v] = [u for u in nx.single_source_shortest_path_length(self.net_agents, v, self.n).keys()]
+    for i in self.net_feed.nodes:
+        self.neigh_feed[i] = [j for j in nx.single_source_shortest_path_length(self.net_feed, i, self.f).keys()]
 
   def rounds(self):
     return self.t
@@ -63,13 +69,11 @@ class Bandit:
       loss = losses[i]
       self.net_agents.nodes[v]['T'][i] += 1
       self.net_agents.nodes[v]['S'][i] += loss
-      neigh_feed = [j for j in nx.single_source_shortest_path_length(self.net_feed, i, self.f).keys()]
-      for j in neigh_feed:
+      for j in self.neigh_feed[i]:
         self.net_agents.nodes[v]['new_ls'].append((self.t, v, j, losses[j], message[j]))
     # Update for all the messages coming from active agents:
     for v in self.net_agents.nodes:
-      neigh_agents = [u for u in nx.single_source_shortest_path_length(self.net_agents, v, self.n).keys()]
-      for u in neigh_agents:
+      for u in self.neigh_agents[v]:
         if u != v:
           self.net_agents.nodes[v]['new_ls'] += self.net_agents.nodes[u]['new_ls']
     return 0
@@ -102,11 +106,9 @@ class COOP_algo():
 
   def ev_b(self, i, v, epsilon = 10**-20):
     new_losses = self.bandit.net_agents.nodes[v]['new_ls']
-    neigh_agents = [u for u in nx.single_source_shortest_path_length(self.bandit.net_agents, v, self.bandit.n).keys()]
-    neigh_feed = [j for j in nx.single_source_shortest_path_length(self.bandit.net_feed, i, self.bandit.f).keys()]
     prod = 1
-    for u in neigh_agents:
-      P = np.sum([self.P[j,u] for j in neigh_feed])
+    for u in self.bandit.neigh_agents[v]:
+      P = np.sum([self.P[j,u] for j in self.bandit.neigh_feed[i]])
       I_P = 1 - self.bandit.net_agents.nodes[u]['q'] * P
       prod *= I_P
     b = 1 - prod + epsilon
@@ -148,17 +150,15 @@ class COOP_algo():
   def ev_lhat(self, i, v, epsilon = 10**-20):
     new_losses = self.bandit.net_agents.nodes[v]['new_ls']
     if len(new_losses) != 0:
-      loss_comps = {(j, loss) for s, u, j, loss, prob in new_losses} # maybe add prob????
+      loss_comps = {(j, loss) for s, u, j, loss, prob in new_losses}
       seen_comps = {j for s, u, j, loss, prob in new_losses}
-      neigh_agents = [u for u in nx.single_source_shortest_path_length(self.bandit.net_agents, v, self.bandit.n).keys()]
-      neigh_feed = [j for j in nx.single_source_shortest_path_length(self.bandit.net_feed, i, self.bandit.f).keys()]
       if i not in seen_comps:
         return 0.
       else:
         [l_i] = [l[1] for l in loss_comps if l[0]==i]
         prod = 1
-        for u in neigh_agents:
-          P = np.sum([self.P[j,u] for j in neigh_feed])
+        for u in self.bandit.neigh_agents[v]:
+          P = np.sum([self.P[j,u] for j in self.bandit.neigh_feed[i]])
           I_P = 1 - self.bandit.net_agents.nodes[u]['q'] * P
           prod *= I_P
         b = 1 - prod + epsilon

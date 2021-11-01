@@ -104,5 +104,5 @@ def run_experiment(q = [1,0.5,1/20], A = [20], K = [20], n = [2], f = [2],
     return 0
 
 run_experiment(q=[1], f=[1], n=[1], K=[20], A=[20], p_ERa = [0.8], p_ERf = [0.8],
-                T=100, sample=10, LB_bias=False, bias=0., lr = 'dt', cpu_num=4,
+                T=100, sample=1, LB_bias=False, bias=0., lr = 'dt', cpu_num=1,
                 seed_a = 43, seed_f = 41)
