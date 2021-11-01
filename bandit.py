@@ -7,7 +7,7 @@ import copy
 
 
 class Bandit:
-  def __init__(self, means, A, K, n, f, p_ERa = 0.1, p_ERf = 0.1, q = 1, seed_f = 41, seed_a = 42):
+  def __init__(self, means, A, K, n, f, p_ERa, p_ERf , q, seed_a, seed_f):
     assert len(means) == K
     self.means = means
     self.subopt = self.means - np.min(self.means)
