@@ -24,6 +24,7 @@ class Bandit:
 
     for v in self.net_agents.nodes:
         self.net_agents.nodes[v]['new_ls'] = []
+        self.net_agents.nodes[v]['my_ls'] = []
         self.net_agents.nodes[v]['m'] = np.zeros(self.arms())
         self.net_agents.nodes[v]['T'] = np.zeros(self.arms())
         self.net_agents.nodes[v]['S'] = np.zeros(self.arms())
@@ -54,13 +55,14 @@ class Bandit:
       self.activations.append(np.random.binomial(1, self.net_agents.nodes[v]['q']))
 
   def play(self, arms):
-    assert len(self.net_agents.nodes) == len(arms)
     # Compute losses for this round
+    assert len(self.net_agents.nodes) == len(arms)
     losses = np.random.binomial(1, self.means)
     self.t += 1
     # delete previous losses and prepare for new onens
     for v in self.net_agents.nodes:
       self.net_agents.nodes[v]['new_ls'] = []
+      self.net_agents.nodes[v]['my_ls'] = []
     # Update when you are active and play:
     gen = (v for v in self.net_agents.nodes if self.activations[v]==1)
     for v in gen:
@@ -70,12 +72,11 @@ class Bandit:
       self.net_agents.nodes[v]['T'][i] += 1
       self.net_agents.nodes[v]['S'][i] += loss
       for j in self.neigh_feed[i]:
-        self.net_agents.nodes[v]['new_ls'].append((self.t, v, j, losses[j], message[j]))
+        self.net_agents.nodes[v]['my_ls'].append((self.t, v, j, losses[j], message[j]))
     # Update for all the messages coming from active agents:
     for v in self.net_agents.nodes:
       for u in self.neigh_agents[v]:
-        if u != v:
-          self.net_agents.nodes[v]['new_ls'] += self.net_agents.nodes[u]['new_ls']
+        self.net_agents.nodes[v]['new_ls'] += self.net_agents.nodes[u]['my_ls']
     return 0
 
 
@@ -115,9 +116,9 @@ class COOP_algo():
     return b
 
   def update(self, eta):
-    for v in range(len(self.bandit.net_agents.nodes)):
-      for i in range(self.bandit.arms()):
-        self.W[i,v] = self.W[i,v] * np.exp(-eta[v]*self.ev_lhat(i,v))
+    eta_m = np.array([eta[v] for v in range(self.bandit.A)]).reshape((1,self.bandit.A))
+    lhat_m = np.array([[self.ev_lhat(i,v) for v in range(self.bandit.A)] for i in range(self.bandit.K)])
+    self.W *= np.exp(-eta_m*lhat_m)
     for v in range(len(self.bandit.net_agents.nodes)):
       self.P[:,v] = self.W[:,v]/np.linalg.norm(self.W[:,v], ord=1)
 
