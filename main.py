@@ -39,17 +39,19 @@ def plot_COOPvsNOcoop(results, pmts, sample):
 
 def plot_GraphGraph(pmts):
     w = 6; h = 6; d = 300;
-    (q_, A_, K_, n_, f_, p_ERa_, p_ERf_, T_, seed_a_, seed_f_) = pmts
+    (q, A, K, n, f, p_ERa, p_ERf, T, seed_a, seed_f) = pmts
+    tit_a = f"G_a__agents={A}_pER_a={p_ERa}_seed_a={seed_a}_n={n}.pdf"
+    tit_f = f"G_f__arms={K}_pER_f={p_ERf}_seed_f={seed_f}_f={f}.pdf"
     pp.figure(figsize=(w, h), dpi=d)
-    net_feed = nx.erdos_renyi_graph(K_, p_ERf_, seed = seed_f_)
+    net_feed = nx.erdos_renyi_graph(K, p_ERf, seed = seed_f)
     nx.draw_networkx(net_feed, pos=nx.spring_layout(net_feed), node_color ="red", alpha=0.9)
     pp.axis ("off")
-    pp.savefig("G_f.pdf")
+    pp.savefig(tit_f)
     pp.figure(figsize=(w, h), dpi=d)
-    net_agents = nx.erdos_renyi_graph(A_, p_ERa_, seed = seed_a_)
+    net_agents = nx.erdos_renyi_graph(A, p_ERa, seed = seed_a)
     nx.draw_networkx(net_agents, pos=nx.spring_layout(net_agents), node_color ="lightblue", alpha=0.9)
     pp.axis ("off")
-    pp.savefig("G_a.pdf")
+    pp.savefig(tit_a)
 
 def UB(x_list, d, K, alpha_feed, alpha_agents):
     f = lambda x: d+2*np.sqrt(np.log(K)*x*(alpha_feed/(1-np.exp(-1))*(alpha_agents/coop.Q+1)+d))
@@ -86,15 +88,15 @@ def run_experiment(q = [1,0.5,1/20], A = [20], K = [20], n = [2], f = [2],
         comb_pmts = [[*pmts, T, seed_a, seed_f] for pmts in itertools.product(q, A, K, n, f, p_ERa, p_ERf)]
         plot_GraphGraph(comb_pmts[0])
         for pmts in comb_pmts:
-            (q_, A_, K_, n_, f_, p_ERa_, p_ERf_, T_, seed_a_, seed_f_) = pmts
-            arms_mean = 1/2 * np.ones(K_)
+            (q, A, K, n, f, p_ERa, p_ERf, T, seed_a, seed_f) = pmts
+            arms_mean = 1/2 * np.ones(K)
             if LB_bias:
-                arms_mean[0] = 1/2 - np.sqrt(K_/T_)
+                arms_mean[0] = 1/2 - np.sqrt(K/T)
             else:
                 arms_mean[0] = bias
             pmts.append(arms_mean)
             pmts.append(lr)
-            pmts_indep = [q_, A_, K_, 0, f_, 0, p_ERf_, T_, seed_a_, seed_f_, arms_mean, lr]
+            pmts_indep = [q, A, K, 0, f, 0, p_ERf, T, seed_a, seed_f, arms_mean, lr]
             it = [pmts for s in range(sample)]
             it_indep = [pmts_indep for s in range(sample)]
             pool = mp.Pool(cpu_num) # mp.cpu_count()
@@ -103,6 +105,6 @@ def run_experiment(q = [1,0.5,1/20], A = [20], K = [20], n = [2], f = [2],
             plot_COOPvsNOcoop(results, pmts, sample)
     return 0
 
-run_experiment(q=[1], f=[1], n=[1], K=[20], A=[20], p_ERa = [0.6], p_ERf = [0.6],
+run_experiment(q=[1], f=[1], n=[1], K=[10], A=[10], p_ERa = [0.6], p_ERf = [0.6],
                 T=100, sample=5, LB_bias=True, bias=0., lr = 'dt', cpu_num=4,
                 seed_a = 43, seed_f = 41)
