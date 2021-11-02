@@ -86,8 +86,8 @@ def run_experiment(q = [1,0.5,1/20], A = [20], K = [20], n = [2], f = [2],
                     lr='dt', cpu_num = None):
     if __name__ == "__main__":
         comb_pmts = [[*pmts, T, seed_a, seed_f] for pmts in itertools.product(q, A, K, n, f, p_ERa, p_ERf)]
-        plot_GraphGraph(comb_pmts[0])
         for pmts in comb_pmts:
+            plot_GraphGraph(pmts)
             (q, A, K, n, f, p_ERa, p_ERf, T, seed_a, seed_f) = pmts
             arms_mean = 1/2 * np.ones(K)
             if LB_bias:
@@ -105,6 +105,6 @@ def run_experiment(q = [1,0.5,1/20], A = [20], K = [20], n = [2], f = [2],
             plot_COOPvsNOcoop(results, pmts, sample)
     return 0
 
-run_experiment(q=[1], f=[1], n=[1], K=[10], A=[10], p_ERa = [0.6], p_ERf = [0.6],
-                T=100, sample=5, LB_bias=True, bias=0., lr = 'dt', cpu_num=4,
+run_experiment(q=[0.1, 0.5, 1], f=[1], n=[1], K=[10], A=[10], p_ERa = [0.6, 0.2], p_ERf = [0.6, 0.2],
+                T=100, sample=3, LB_bias=False, bias=0., lr = 'dt', cpu_num=4,
                 seed_a = 43, seed_f = 41)
