@@ -20,22 +20,22 @@ def plot_COOPvsNOcoop(results, pmts, sample):
     errors_indepp = np.std(r_indepp, axis=0)
     x = [i for i in range(T)]
     # bound = UB(x, n+f, K, coop.alpha_feed, coop.alpha_agents)
-    pp.figure(figsize=(10, 6))
+    pp.figure(figsize=(8, 6))
     pp.plot(x, means, label = r"EXP3-$\alpha^2$", color='blue')
     pp.fill_between(x, means - errors,means + errors, color='blue', alpha=0.2)
     pp.plot(x, means_indepp, label = "No Cooperation", color='red')
     pp.fill_between(x, means_indepp - errors_indepp, means_indepp + errors_indepp, color='red', alpha=0.2)
     pp.grid()
     # pp.plot(x, bound, label = "theory", color='black')
-    # tit_g = f"n={n_}, f={f_}, agents={A_}, arms={K_}, bias0={arms_mean[0]:.3}"
-    # tit_g += f", q={q_}, samples={sample}, ER_a={p_ERa_}, ER_f={p_ERf_}"
+    tit_g = f"q={q}  $p_{{ER}}^N$={p_ERa}  $p_{{ER}}^F$={p_ERf}"
     tit_f = f"q={q}_n={n}_f={f}_agents={A}_arms={K}_T={T}_samples={sample}"
     tit_f += f"_bias0={arms_mean[0]:.3}_pER_a={p_ERa}_pER_f={p_ERf}"
-    # pp.title(tit_g)
+    pp.title(tit_g)
     pp.xlabel("Number of Rounds")
     pp.ylabel("Network Regret")
     pp.legend(loc = 2)
     pp.savefig('G/'+tit_f+'.pdf', dpi=600)
+    return pp
 
 def plot_GraphGraph(pmts):
     w = 6; h = 6; d = 300;
@@ -103,8 +103,9 @@ def run_experiment(q = [1,0.5,1/20], A = [20], K = [20], n = [2], f = [2],
             results = pool.starmap(run_algo, it+it_indep)
             pool.close(); pool.join()
             plot_COOPvsNOcoop(results, pmts, sample)
+
     return 0
 
-run_experiment(q=[0.1, 0.5, 1], f=[1], n=[1], K=[10], A=[10], p_ERa = [0.6, 0.2], p_ERf = [0.6, 0.2],
-                T=100, sample=3, LB_bias=False, bias=0., lr = 'dt', cpu_num=4,
+run_experiment(q=[0.1, 0.5, 1], f=[1], n=[1], K=[20], A=[20], p_ERa = [0.8, 0.2], p_ERf = [0.8, 0.2],
+                T=1000, sample=10, LB_bias=True, bias=0., lr = 'dt', cpu_num=None,
                 seed_a = 43, seed_f = 41)
