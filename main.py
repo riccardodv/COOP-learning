@@ -30,7 +30,7 @@ def plot_COOPvsNOcoop(results, pmts, sample):
     tit_g = f"q={q}  $p_{{ER}}^N$={p_ERa}  $p_{{ER}}^F$={p_ERf}"
     tit_f = f"q={q}_n={n}_f={f}_agents={A}_arms={K}_T={T}_samples={sample}"
     tit_f += f"_bias0={arms_mean[0]:.3}_pER_a={p_ERa}_pER_f={p_ERf}"
-    pp.title(tit_g)
+    pp.title(tit_g, size=16)
     pp.xlabel("Number of Rounds")
     pp.ylabel("Network Regret")
     pp.legend(loc = 2)
@@ -40,18 +40,22 @@ def plot_COOPvsNOcoop(results, pmts, sample):
 def plot_GraphGraph(pmts):
     w = 6; h = 6; d = 300;
     (q, A, K, n, f, p_ERa, p_ERf, T, seed_a, seed_f) = pmts
-    tit_a = f"G_a__agents={A}_pER_a={p_ERa}_seed_a={seed_a}_n={n}.pdf"
-    tit_f = f"G_f__arms={K}_pER_f={p_ERf}_seed_f={seed_f}_f={f}.pdf"
+    tit_a = f"G_a__A={A}_pER_a={p_ERa}_seed_a={seed_a}_n={n}.pdf"
+    tit_g_a = f"A={A}  $p_{{ER}}^N$={p_ERa}"
+    tit_f = f"G_f__K={K}_pER_f={p_ERf}_seed_f={seed_f}_f={f}.pdf"
+    tit_g_f = f"K={K}  $p_{{ER}}^F$={p_ERf}"
     pp.figure(figsize=(w, h), dpi=d)
     net_feed = nx.erdos_renyi_graph(K, p_ERf, seed = seed_f)
     nx.draw_networkx(net_feed, pos=nx.spring_layout(net_feed), node_color ="red", alpha=0.9)
     pp.axis ("off")
-    pp.savefig(tit_f)
+    pp.title(tit_g_f, size=16)
+    pp.savefig('G/'+tit_f)
     pp.figure(figsize=(w, h), dpi=d)
     net_agents = nx.erdos_renyi_graph(A, p_ERa, seed = seed_a)
     nx.draw_networkx(net_agents, pos=nx.spring_layout(net_agents), node_color ="lightblue", alpha=0.9)
     pp.axis ("off")
-    pp.savefig(tit_a)
+    pp.title(tit_g_a, size=16)
+    pp.savefig('G/'+tit_a)
 
 def UB(x_list, d, K, alpha_feed, alpha_agents):
     f = lambda x: d+2*np.sqrt(np.log(K)*x*(alpha_feed/(1-np.exp(-1))*(alpha_agents/coop.Q+1)+d))
@@ -107,5 +111,5 @@ def run_experiment(q = [1,0.5,1/20], A = [20], K = [20], n = [2], f = [2],
     return 0
 
 run_experiment(q=[0.1, 0.5, 1], f=[1], n=[1], K=[20], A=[20], p_ERa = [0.8, 0.2], p_ERf = [0.8, 0.2],
-                T=1000, sample=10, LB_bias=True, bias=0., lr = 'dt', cpu_num=None,
+                T=1000, sample=1, LB_bias=False, bias=0., lr = 'dt', cpu_num=None,
                 seed_a = 43, seed_f = 41)
