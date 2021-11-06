@@ -1,1 +1,1 @@
-# COOP-learning
+# EXP3-$\alpha^2$
