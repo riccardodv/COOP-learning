@@ -52,12 +52,14 @@ class Bandit:
   def activate_players(self):
     self.activations = []
     for v in self.net_agents.nodes:
-      self.activations.append(np.random.binomial(1, self.net_agents.nodes[v]['q']))
+      rng = np.random.RandomState(self.t*self.A+v)
+      self.activations.append(rng.binomial(1, self.net_agents.nodes[v]['q']))
 
   def play(self, arms):
     # Compute losses for this round
     assert len(self.net_agents.nodes) == len(arms)
-    losses = np.random.binomial(1, self.means)
+    rng = np.random.RandomState(self.t)
+    losses = rng.binomial(1, self.means)
     self.t += 1
     # delete previous losses and prepare for new onens
     for v in self.net_agents.nodes:

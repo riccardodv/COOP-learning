@@ -21,19 +21,21 @@ def plot_COOPvsNOcoop(results, pmts, sample):
     x = [i for i in range(T)]
     # bound = UB(x, n+f, K, coop.alpha_feed, coop.alpha_agents)
     pp.figure(figsize=(8, 6))
-    pp.plot(x, means, label = r"EXP3-$\alpha^2$", color='blue')
+    # pp.plot(x, means, label = r"EXP3-$\alpha^2$", color='blue')
+    pp.plot(x, means, color='blue')
     pp.fill_between(x, means - errors,means + errors, color='blue', alpha=0.2)
-    pp.plot(x, means_indepp, label = "No Cooperation", color='red')
+    # pp.plot(x, means_indepp, label = "No Cooperation", color='red')
+    pp.plot(x, means_indepp, color='red')
     pp.fill_between(x, means_indepp - errors_indepp, means_indepp + errors_indepp, color='red', alpha=0.2)
     pp.grid()
     # pp.plot(x, bound, label = "theory", color='black')
     tit_g = f"q={q}  $p_{{ER}}^N$={p_ERa}  $p_{{ER}}^F$={p_ERf}"
     tit_f = f"q={q}_n={n}_f={f}_agents={A}_arms={K}_T={T}_samples={sample}"
     tit_f += f"_bias0={arms_mean[0]:.3}_pER_a={p_ERa}_pER_f={p_ERf}"
-    pp.title(tit_g, size=16)
-    pp.xlabel("Number of Rounds")
-    pp.ylabel("Network Regret")
-    pp.legend(loc = 2)
+    # pp.title(tit_g, size=16)
+    # pp.xlabel("Number of Rounds")
+    # pp.ylabel("Network Regret")
+    # pp.legend(loc=2)
     pp.savefig('G/'+tit_f+'.pdf', dpi=600)
     return pp
 
@@ -48,13 +50,13 @@ def plot_GraphGraph(pmts):
     net_feed = nx.erdos_renyi_graph(K, p_ERf, seed = seed_f)
     nx.draw_networkx(net_feed, pos=nx.spring_layout(net_feed), node_color ="red", alpha=0.9)
     pp.axis ("off")
-    pp.title(tit_g_f, size=16)
+    # pp.title(tit_g_f, size=16)
     pp.savefig('G/'+tit_f)
     pp.figure(figsize=(w, h), dpi=d)
     net_agents = nx.erdos_renyi_graph(A, p_ERa, seed = seed_a)
     nx.draw_networkx(net_agents, pos=nx.spring_layout(net_agents), node_color ="lightblue", alpha=0.9)
     pp.axis ("off")
-    pp.title(tit_g_a, size=16)
+    # pp.title(tit_g_a, size=16)
     pp.savefig('G/'+tit_a)
 
 def UB(x_list, d, K, alpha_feed, alpha_agents):
@@ -90,6 +92,7 @@ def run_experiment(q = [1,0.5,1/20], A = [20], K = [20], n = [2], f = [2],
                     lr='dt', cpu_num = None):
     if __name__ == "__main__":
         comb_pmts = [[*pmts, T, seed_a, seed_f] for pmts in itertools.product(q, A, K, n, f, p_ERa, p_ERf)]
+        summary_results = []
         for pmts in comb_pmts:
             plot_GraphGraph(pmts)
             (q, A, K, n, f, p_ERa, p_ERf, T, seed_a, seed_f) = pmts
@@ -107,9 +110,12 @@ def run_experiment(q = [1,0.5,1/20], A = [20], K = [20], n = [2], f = [2],
             results = pool.starmap(run_algo, it+it_indep)
             pool.close(); pool.join()
             plot_COOPvsNOcoop(results, pmts, sample)
-
+            # summary_results.append()
     return 0
 
-run_experiment(q=[0.1, 0.5, 1], f=[1], n=[1], K=[20], A=[20], p_ERa = [0.8, 0.2], p_ERf = [0.8, 0.2],
-                T=1000, sample=10, LB_bias=True, bias=0., lr = 'dt', cpu_num=None,
+# run_experiment(q=[0.05, 0.5, 1], f=[1], n=[1], K=[20], A=[20], p_ERa = [0.8, 0.2], p_ERf = [0.8, 0.2],
+#                 T=1000, sample=20, LB_bias=True, bias=0., lr = 'dt', cpu_num=None,
+#                 seed_a = 43, seed_f = 41)
+run_experiment(q=[1], f=[1], n=[1], K=[20], A=[20], p_ERa = [0.8], p_ERf = [0.8],
+                T=10, sample=3, LB_bias=False, bias=0., lr = 'dt', cpu_num=None,
                 seed_a = 43, seed_f = 41)
