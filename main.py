@@ -110,13 +110,16 @@ def run_experiment(q = [1,0.5,1/20], A = [20], K = [20], n = [2], f = [2],
             r = results[:sample,:]
             r_indepp = results[sample:,:]
             plot_COOPvsNOcoop(r, r_indepp, pmts, sample)
-            summary_results.append((q, p_ERa, p_ERf, np.mean(r[:,-1]), np.mean(r_indepp[:,-1])))
-        print(summary_results)
+            summary_results.append([q, p_ERa, p_ERf, np.mean(r[:,-1]), np.mean(r_indepp[:,-1])])
+        file = open("./G/table.txt", "w")
+        # np.savetxt(file, ['q', 'p_ERa', 'p_ERf', 'mean', 'mean_indep'])
+        np.savetxt(file, summary_results, delimiter='\t', fmt=["%.1f", "%.1f", "%.1f", "%.3f", "%.3f"])
+        file.close()
     return 0
 
-# run_experiment(q=[0.05, 0.5, 1], f=[1], n=[1], K=[20], A=[20], p_ERa = [0.8, 0.2], p_ERf = [0.8, 0.2],
-#                 T=1000, sample=20, LB_bias=True, bias=0., lr = 'dt', cpu_num=None,
-#                 seed_a = 43, seed_f = 41)
-run_experiment(q=[1], f=[1], n=[1], K=[20], A=[20], p_ERa = [0.8], p_ERf = [0.8],
-                T=10, sample=3, LB_bias=False, bias=0., lr = 'dt', cpu_num=None,
+run_experiment(q=[0.05, 0.5, 1], f=[1], n=[1], K=[20], A=[20], p_ERa = [0.8, 0.2], p_ERf = [0.8, 0.2],
+                T=1000, sample=20, LB_bias=True, bias=0., lr = 'dt', cpu_num=None,
                 seed_a = 43, seed_f = 41)
+# run_experiment(q=[1], f=[1], n=[1], K=[20], A=[20], p_ERa = [0.8,0.2], p_ERf = [0.8,0.2],
+#                 T=10, sample=3, LB_bias=False, bias=0., lr = 'dt', cpu_num=None,
+#                 seed_a = 43, seed_f = 41)
