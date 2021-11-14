@@ -9,11 +9,8 @@ import multiprocessing as mp
 import itertools
 import copy
 
-def plot_COOPvsNOcoop(results, pmts, sample):
+def plot_COOPvsNOcoop(r, r_indepp, pmts, sample):
     (q, A, K, n, f, p_ERa, p_ERf, T, seed_a, seed_f, arms_mean, lr) = pmts
-    results = np.array(results)
-    r = results[:sample,:]
-    r_indepp = results[sample:,:]
     means = np.mean(r, axis=0)
     errors = np.std(r, axis=0)
     means_indepp = np.mean(r_indepp, axis=0)
@@ -48,13 +45,13 @@ def plot_GraphGraph(pmts):
     tit_g_f = f"K={K}  $p_{{ER}}^F$={p_ERf}"
     pp.figure(figsize=(w, h), dpi=d)
     net_feed = nx.erdos_renyi_graph(K, p_ERf, seed = seed_f)
-    nx.draw_networkx(net_feed, pos=nx.spring_layout(net_feed), node_color ="red", alpha=0.9)
+    nx.draw_networkx(net_feed, pos=nx.spring_layout(net_feed), node_color ="orange", alpha=0.9)
     pp.axis ("off")
     # pp.title(tit_g_f, size=16)
     pp.savefig('G/'+tit_f)
     pp.figure(figsize=(w, h), dpi=d)
     net_agents = nx.erdos_renyi_graph(A, p_ERa, seed = seed_a)
-    nx.draw_networkx(net_agents, pos=nx.spring_layout(net_agents), node_color ="lightblue", alpha=0.9)
+    nx.draw_networkx(net_agents, pos=nx.spring_layout(net_agents), node_color ="lightgreen", alpha=0.9)
     pp.axis ("off")
     # pp.title(tit_g_a, size=16)
     pp.savefig('G/'+tit_a)
@@ -109,8 +106,12 @@ def run_experiment(q = [1,0.5,1/20], A = [20], K = [20], n = [2], f = [2],
             pool = mp.Pool(cpu_num) # mp.cpu_count()
             results = pool.starmap(run_algo, it+it_indep)
             pool.close(); pool.join()
-            plot_COOPvsNOcoop(results, pmts, sample)
-            # summary_results.append()
+            results = np.array(results)
+            r = results[:sample,:]
+            r_indepp = results[sample:,:]
+            plot_COOPvsNOcoop(r, r_indepp, pmts, sample)
+            summary_results.append((q, p_ERa, p_ERf, np.mean(r[:,-1]), np.mean(r_indepp[:,-1])))
+        print(summary_results)
     return 0
 
 # run_experiment(q=[0.05, 0.5, 1], f=[1], n=[1], K=[20], A=[20], p_ERa = [0.8, 0.2], p_ERf = [0.8, 0.2],
