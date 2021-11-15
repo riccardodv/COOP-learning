@@ -113,7 +113,7 @@ def run_experiment(q = [1,0.5,1/20], A = [20], K = [20], n = [2], f = [2],
             summary_results.append([q, p_ERa, p_ERf, np.mean(r[:,-1]), np.mean(r_indepp[:,-1])])
         file = open("./G/table.txt", "w")
         # np.savetxt(file, ['q', 'p_ERa', 'p_ERf', 'mean', 'mean_indep'])
-        np.savetxt(file, summary_results, delimiter='\t', fmt=["%.1f", "%.1f", "%.1f", "%.3f", "%.3f"])
+        np.savetxt(file, summary_results, delimiter='\t', fmt=["%.2f", "%.2f", "%.2f", "%.3f", "%.3f"])
         file.close()
     return 0
 
